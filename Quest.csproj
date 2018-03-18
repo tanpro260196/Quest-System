@@ -7,8 +7,8 @@
     <ProjectGuid>{16DAC6EC-2E9D-497F-A79E-26442A0E6192}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>$safeprojectname$</RootNamespace>
-    <AssemblyName>Quest System</AssemblyName>
+    <RootNamespace>QuestSystem</RootNamespace>
+    <AssemblyName>Quest-System</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -31,26 +31,28 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="BCrypt.Net">
-      <HintPath>..\..\tshock_4.3.25\ServerPlugins\BCrypt.Net.dll</HintPath>
+      <HintPath>tshock-references\BCrypt.Net.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="HttpServer">
-      <HintPath>..\..\tshock_4.3.25\ServerPlugins\HttpServer.dll</HintPath>
+      <HintPath>tshock-references\HttpServer.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="Mono.Data.Sqlite, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\tshock_4.3.25\ServerPlugins\Mono.Data.Sqlite.dll</HintPath>
+    <Reference Include="Mono.Data.Sqlite">
+      <HintPath>tshock-references\Mono.Data.Sqlite.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="MySql.Data, Version=6.9.8.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\tshock_4.3.25\ServerPlugins\MySql.Data.dll</HintPath>
+    <Reference Include="MySql.Data">
+      <HintPath>tshock-references\MySql.Data.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\tshock_4.3.25\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>tshock-references\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="OTAPI, Version=1.3.5.3, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\tshock_4.3.25\OTAPI.dll</HintPath>
+    <Reference Include="OTAPI">
+      <HintPath>tshock-references\OTAPI.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -60,24 +62,25 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="TerrariaServer, Version=1.3.5.3, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\tshock_4.3.25\TerrariaServer.exe</HintPath>
+    <Reference Include="TerrariaServer">
+      <HintPath>tshock-references\TerrariaServer.exe</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="TShockAPI, Version=4.3.24.0, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\tshock_4.3.25\ServerPlugins\TShockAPI.dll</HintPath>
+    <Reference Include="TShockAPI">
+      <HintPath>tshock-references\TShockAPI.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Wolfje.Plugins.SEconomy">
-      <HintPath>E:\OneDrive\Documents\GitHub\Shop-master\Shop\refs\Wolfje.Plugins.SEconomy.dll</HintPath>
+      <HintPath>tshock-references\Wolfje.Plugins.SEconomy.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Quest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="tshock-references\README.md" />
+    <Folder Include="tshock-references\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
