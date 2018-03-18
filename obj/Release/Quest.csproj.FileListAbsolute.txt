@@ -1,0 +1,15 @@
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\obj\Release\Quest.csprojResolveAssemblyReference.cache
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\obj\Release\Quest.csproj.CoreCompileInputs.cache
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\BCrypt.Net.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\HttpServer.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\Mono.Data.Sqlite.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\MySql.Data.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\Newtonsoft.Json.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\OTAPI.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\TerrariaServer.exe
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\TShockAPI.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\Wolfje.Plugins.SEconomy.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\Quest System.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\Quest System.pdb
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\obj\Release\Quest System.dll
+D:\Downloads\Compressed\Source Code\TShockPluginTemplate\obj\Release\Quest System.pdb
