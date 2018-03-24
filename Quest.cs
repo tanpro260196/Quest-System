@@ -48,6 +48,7 @@ namespace Quest
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", Quest_return, "quest", "q"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", questsearch, "questsearch", "qs"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ForceUpdate, "forcequestupdate", "fqu"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ReloadConfig, "reloadquest", "rq"));
             ReadConfig();
 
             switch (TShock.Config.StorageType.ToLower())
