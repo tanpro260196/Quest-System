@@ -111,56 +111,108 @@ namespace Quest
             Random rnd = new Random();
             int quest_quantity = rnd.Next(config.min_avail_quest, config.max_avail_quest);
             int i = 1;
-            using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
+            while (i <= quest_quantity)
             {
-                while (i <= quest_quantity)
+                i = 1;
+                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
                 {
                     while (reader.Read())
                     {
-                        if ((i <= quest_quantity) && (rnd.Next(1, 100) >= config.percent_not_choosen))
+                        bool hmcheck = false;
+                        foreach (var questitem in config.All)
                         {
-                            i++;
-                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
-                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            if (questitem.DisplayName == reader.Get<string>("QuestName"))
+                            {
+                                hmcheck = questitem.hardmode;
+                            }
                         }
-                        else
+                        if (Main.hardMode)
                         {
-                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
-                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            if ((i <= quest_quantity) && (rnd.Next(1, 100) >= config.percent_not_choosen))
+                            {
+                                i++;
+                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
+                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            }
+                            else
+                            {
+                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
+                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            }
+                        }
+                        else if (!Main.hardMode)
+                        {
+                            if ((i <= quest_quantity) && (rnd.Next(1, 100) >= config.percent_not_choosen) && (hmcheck == Main.hardMode))
+                            {
+                                i++;
+                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
+                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            }
+                            else
+                            {
+                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
+                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            }
                         }
                     }
                 }
             }
-            TShock.Utils.Broadcast("Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
-            TShock.Utils.Broadcast("Total Number of Quests Available today is: " + quest_quantity + ".", Color.LightBlue);
+            TShock.Utils.Broadcast("[Quest System] Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
+            TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + quest_quantity + ".", Color.LightBlue);
         }
         private void ForceUpdate(CommandArgs args)
         {
             Random rnd = new Random();
             int quest_quantity = rnd.Next(config.min_avail_quest, config.max_avail_quest);
             int i = 1;
-            using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
+            while (i <= quest_quantity)
             {
-                while (i <= quest_quantity)
+                i = 1;
+                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
                 {
                     while (reader.Read())
                     {
-                        if ((i <= quest_quantity) && (rnd.Next(1, 100) >= config.percent_not_choosen))
+                        bool hmcheck = false;
+                        foreach (var questitem in config.All)
                         {
-                            i++;
-                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
-                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            if (questitem.DisplayName == reader.Get<string>("QuestName"))
+                            {
+                                hmcheck = questitem.hardmode;
+                            }
                         }
-                        else
+                        if (Main.hardMode)
                         {
-                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
-                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            if ((i <= quest_quantity) && (rnd.Next(1, 100) >= config.percent_not_choosen))
+                            {
+                                i++;
+                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
+                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            }
+                            else
+                            {
+                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
+                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            }
+                        }
+                        else if (!Main.hardMode)
+                        {
+                            if ((i <= quest_quantity) && (rnd.Next(1, 100) >= config.percent_not_choosen) && (hmcheck == Main.hardMode))
+                            {
+                                i++;
+                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
+                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            }
+                            else
+                            {
+                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
+                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            }
                         }
                     }
                 }
             }
-            TShock.Utils.Broadcast("Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
-            TShock.Utils.Broadcast("Total Number of Quests Available today is: " + quest_quantity + ".", Color.LightBlue);
+            TShock.Utils.Broadcast("[Quest System] Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
+            TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + quest_quantity + ".", Color.LightBlue);
         }
         #endregion
         #region misc
@@ -577,7 +629,7 @@ namespace Quest
                 SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UsernameBankAccount, paid,
                                                                Journalpayment, string.Format("Completed quest ID {0} for {1}", id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid))),
                                                                string.Format("Quest Completed: " + thingneedtotake.DisplayName));
-                args.Player.SendSuccessMessage("You have completed Quest {0} for {1}!", thingneedtotake.DisplayName, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
+                args.Player.SendSuccessMessage("[Quest System] You have completed Quest {0} for {1}!", thingneedtotake.DisplayName, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
                 TShock.Log.ConsoleInfo("{0} has completed Quest {1} for {2}.", args.Player.Name, thingneedtotake.DisplayName, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
                 var num = QuestDB.Query("INSERT INTO QuestHistory (Time, Account, QuestName, WorldID, Reward) VALUES (@0, @1, @2, @3, @4);", DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss"), args.Player.Name, thingneedtotake.DisplayName, Main.worldID, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
 
@@ -701,6 +753,7 @@ namespace Quest
         public string RequirePermission = "";
         public int Reward = 0;
         public int maxredeem = 5;
+        public bool hardmode = false;
         public List<SimpleItem> IncludeItems = new List<SimpleItem> { };
         public QuestsEntry() { }
         public QuestsEntry(int a)
@@ -714,6 +767,7 @@ namespace Quest
                 RequirePermission = "quest.use";
                 Reward = 500000;
                 maxredeem = -1;
+                hardmode = true;
                 IncludeItems = new List<SimpleItem> { i1, i2, i3 };
             }
             if (a == 2)
@@ -721,6 +775,7 @@ namespace Quest
                 DisplayName = "Example2";
                 Reward = 20;
                 maxredeem = 5;
+                hardmode = false;
                 for (int i = 0; i < 10; i++)
                 {
                     IncludeItems.Add(new SimpleItem(i + 2702));
@@ -732,6 +787,7 @@ namespace Quest
                 DisplayName = "Example3";
                 Reward = 500000;
                 maxredeem = 5;
+                hardmode = false;
                 IncludeItems = new List<SimpleItem> { i1 };
             }
         }

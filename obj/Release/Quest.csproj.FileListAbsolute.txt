@@ -13,9 +13,9 @@ D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\Quest Syste
 D:\Downloads\Compressed\Source Code\TShockPluginTemplate\bin\Release\Quest System.pdb
 D:\Downloads\Compressed\Source Code\TShockPluginTemplate\obj\Release\Quest System.dll
 D:\Downloads\Compressed\Source Code\TShockPluginTemplate\obj\Release\Quest System.pdb
-E:\OneDrive\Documents\GitHub\Quest-System\bin\Release\Quest-System.dll
-E:\OneDrive\Documents\GitHub\Quest-System\bin\Release\Quest-System.pdb
 E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest.csprojResolveAssemblyReference.cache
 E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest.csproj.CoreCompileInputs.cache
-E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest-System.dll
-E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest-System.pdb
+E:\OneDrive\Documents\GitHub\Quest-System\bin\Release\Quest System.dll
+E:\OneDrive\Documents\GitHub\Quest-System\bin\Release\Quest System.pdb
+E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest System.dll
+E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest System.pdb
