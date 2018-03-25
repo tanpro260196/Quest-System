@@ -577,7 +577,7 @@ namespace Quest
                 {
                     items = args.Player.TPlayer.inventory[i];
                     // Loops through the player's inventory
-                    if ((items.netID == q.netID) && (args.Player.TPlayer.inventory[i].stack >= q.stack))
+                    if ((items.netID == q.netID) && (args.Player.TPlayer.inventory[i].stack >= q.stack) && items.prefix == item.prefix)
                     {
                         exist = true;
                         exist2 = true;
@@ -587,7 +587,7 @@ namespace Quest
                 if (!exist2)
                 {
                     Item take = TShock.Utils.GetItemById(q.netID);
-                    args.Player.SendInfoMessage("You don't have the required item [{0}] in your inventory!", take.Name);
+                    args.Player.SendInfoMessage("You don't have the required item [{0}] in your inventory!", ItemToTag(item));
                     return;
                 }
             }
@@ -608,7 +608,7 @@ namespace Quest
                     {
                         items = args.Player.TPlayer.inventory[i];
                         // Loops through the player's inventory
-                        if ((items.netID == q.netID) && (args.Player.TPlayer.inventory[i].stack >= q.stack))
+                        if ((items.netID == q.netID) && (args.Player.TPlayer.inventory[i].stack >= q.stack) && items.prefix == item.prefix)
                         {
                             collection_success = true;
                             args.Player.TPlayer.inventory[i].stack -= q.stack;
@@ -620,7 +620,7 @@ namespace Quest
                     if (!collection_success)
                     {
                         Item take = TShock.Utils.GetItemById(q.netID);
-                        args.Player.SendInfoMessage("Don't take the item {0} out of your inventory! Transaction Cancelled.", take.Name);
+                        args.Player.SendInfoMessage("Don't take the item {0} out of your inventory! Transaction Cancelled.", ItemToTag(item));
                         return;
                     }
                 }
