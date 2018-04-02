@@ -572,7 +572,7 @@ namespace Quest
                                 newline = newline + ItemToTag(item);
                             }
                             newline = newline + " - Quest Name: " + reader.Get<string>("QuestName");
-                            if (args.Player.Group.HasPermission(item_in_config.RequirePermission))
+                            if ((args.Player.Group.HasPermission(item_in_config.RequirePermission)) && ((item_in_config.maxredeem - totalcount) != 0))
                             {
                                 lines.Add(newline);
                             }
