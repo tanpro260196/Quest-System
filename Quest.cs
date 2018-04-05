@@ -32,7 +32,7 @@ namespace Quest
         }
         public override string Author
         {
-            get { return "BMS"; }
+            get { return "BMS aka Boss"; }
         }
         public override string Description
         {
@@ -46,6 +46,7 @@ namespace Quest
         {
             ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", Quest_return, "quest", "q"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", rankquest, "rank"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", questsearch, "questsearch", "qs"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ForceUpdate, "forcequestupdate", "fqu"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ReloadConfig, "reloadquest", "rq"));
@@ -85,6 +86,14 @@ namespace Quest
                new SqlColumn("QuestName", MySqlDbType.String, 100),
                new SqlColumn("WorldID", MySqlDbType.Int32),
                new SqlColumn("Reward", MySqlDbType.String, 100)));
+
+            sqlcreator.EnsureTableStructure(new SqlTable("RankQuest",
+               new SqlColumn("netID", MySqlDbType.String, 200),
+               new SqlColumn("ItemName", MySqlDbType.VarChar) { Length = 50 },
+               new SqlColumn("Stack", MySqlDbType.String, 100),
+               new SqlColumn("Prefix", MySqlDbType.Int32),
+               new SqlColumn("StartRank", MySqlDbType.String, 100),
+               new SqlColumn("FinalRank", MySqlDbType.String, 100)));
 
             UpdateDB();
         }
@@ -743,6 +752,154 @@ namespace Quest
             }
 
         }
+        private void rankquest(CommandArgs args) 
+        {
+            if (args.Parameters[0] == "quest" || args.Parameters[0] == "q")
+            {
+                args.Player.SendMessage("Scanning for required Items...", Color.LightBlue);
+                bool confirm_success = false;
+                using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
+                {
+                    while (reader.Read())
+                    {
+                        
+
+                        bool exist2 = false;
+                        var items_in_inventory = new Item();
+                        int prefix_in_config = reader.Get<int>("Prefix");
+
+                        for (int i = 0; i < 50; i++)
+                        {
+                            items_in_inventory = args.Player.TPlayer.inventory[i];
+                            //If prefix = 0 in config, ignore prefix.
+                            if (reader.Get<int>("Prefix") == 0)
+                            {
+                                prefix_in_config = items_in_inventory.prefix;
+                            }
+                            // Loops through the player's inventory
+                            if ((items_in_inventory.netID == reader.Get<int>("netID")) && (items_in_inventory.stack >= reader.Get<int>("Stack")) && items_in_inventory.prefix == prefix_in_config)
+                            {
+                                confirm_success = true;
+                                exist2 = true;
+                                break;
+                            }
+                        }
+                        if (!exist2)
+                        {
+                            args.Player.SendMessage("You are missing this item: " + itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix")), Color.LightBlue);
+                            confirm_success = false;
+                            return;
+                        }
+                    }
+                }
+
+                if (confirm_success)
+                {
+                    using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
+                    {
+                        while (reader.Read())
+                        {
+
+
+                            bool exist2 = false;
+                            var items_in_inventory = new Item();
+                            int prefix_in_config = reader.Get<int>("Prefix");
+
+                            for (int i = 0; i < 50; i++)
+                            {
+                                items_in_inventory = args.Player.TPlayer.inventory[i];
+                                //If prefix = 0 in config, ignore prefix.
+                                if (reader.Get<int>("Prefix") == 0)
+                                {
+                                    prefix_in_config = items_in_inventory.prefix;
+                                }
+                                // Loops through the player's inventory
+                                if ((items_in_inventory.netID == reader.Get<int>("netID")) && (items_in_inventory.stack >= reader.Get<int>("Stack")) && items_in_inventory.prefix == prefix_in_config)
+                                {
+                                    confirm_success = true;
+                                    exist2 = true;
+                                    args.Player.TPlayer.inventory[i].stack -= reader.Get<int>("Stack");
+                                    NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, NetworkText.Empty, args.Player.Index, i);
+                                    break;
+                                }
+                            }
+                            if (!exist2)
+                            {
+                                args.Player.SendMessage("Do not take this item: " + itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix")) + " out of your inventory!", Color.LightBlue);
+                                confirm_success = false;
+                                return;
+                            }
+                        }
+                    }
+                }
+                //If all items is found. Remove from inventory and change group.
+                if (confirm_success)
+                {
+                    string finalgroupname = null;
+                    using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
+                    {
+                        while (reader.Read())
+                        {
+                            if (args.Player.Group.Name == reader.Get<string>("StartRank"))
+                            {
+                                finalgroupname = reader.Get<string>("FinalRank");
+                                break;
+                            }
+                        }
+                    }
+                    TShockAPI.Group finalgroup = TShock.Utils.GetGroup(finalgroupname);
+                    args.Player.Group.AssignTo(finalgroup);
+                    args.Player.SendMessage("Congratulation, You have completed the level's quest and leveled up to " + finalgroup.Name + "!" ,Color.LightBlue);
+                    return;
+                }
+                return;
+            }
+            //list quest's items
+            if (args.Parameters[0] == "up")
+            {
+                string item_list = null;
+                bool quest_available = false;
+                using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
+                {
+                    while (reader.Read())
+                    {
+                        if (args.Player.Group.Name == reader.Get<string>("StartRank"))
+                        {
+
+                            string item_tag = itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix"));
+                            item_list = item_list + item_tag;
+                        }
+                    }
+                }
+                if (quest_available)
+                {
+                    args.Player.SendMessage("You are required to collect the following Item(s) to level up: " + item_list, Color.LightBlue);
+                    args.Player.SendMessage("After collecting those item, type /rank quest to complete the quest and level up!", Color.LightBlue);
+                    return;
+                }
+                return;
+            }
+            string item_list_2 = null;
+            bool quest_available_2 = false;
+            using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
+            {
+                while (reader.Read())
+                {
+                    if (args.Player.Group.Name == reader.Get<string>("StartRank"))
+                    {
+                        
+                        string item_tag = itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix"));
+                        item_list_2 = item_list_2 + item_tag;
+                    }
+                }
+            }
+            if (quest_available_2)
+            {
+                args.Player.SendMessage("You are required to collect the following Item(s) to level up: " + item_list_2, Color.LightBlue);
+                args.Player.SendMessage("After collecting those item, type /rank quest to complete the quest and level up!", Color.LightBlue);
+                return;
+            }
+        }
         #region config
         private void CreateConfig()
         {
@@ -914,7 +1071,4 @@ namespace Quest
             this.name = TShockAPI.Utils.Instance.GetItemByIdOrName(netID.ToString())[0].Name;
         }
     }
-
-
-
 }
