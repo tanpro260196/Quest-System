@@ -754,6 +754,30 @@ namespace Quest
         }
         private void rankquest(CommandArgs args) 
         {
+            if ((args.Parameters.Count == 0) || (args.Parameters[0] == "up"))
+            {
+                string item_list = null;
+                bool quest_available = false;
+                using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
+                {
+                    while (reader.Read())
+                    {
+                        if (args.Player.Group.Name == reader.Get<string>("StartRank"))
+                        {
+
+                            string item_tag = itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix"));
+                            item_list = item_list + item_tag;
+                        }
+                    }
+                }
+                if (quest_available)
+                {
+                    args.Player.SendMessage("You are required to collect the following Item(s) to level up: " + item_list, Color.LightBlue);
+                    args.Player.SendMessage("After collecting those item, type /rank quest to complete the quest and level up!", Color.LightBlue);
+                    return;
+                }
+                return;
+            }
             if (args.Parameters[0] == "quest" || args.Parameters[0] == "q")
             {
                 args.Player.SendMessage("Scanning for required Items...", Color.LightBlue);
@@ -855,50 +879,7 @@ namespace Quest
                 return;
             }
             //list quest's items
-            if (args.Parameters[0] == "up")
-            {
-                string item_list = null;
-                bool quest_available = false;
-                using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
-                {
-                    while (reader.Read())
-                    {
-                        if (args.Player.Group.Name == reader.Get<string>("StartRank"))
-                        {
-
-                            string item_tag = itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix"));
-                            item_list = item_list + item_tag;
-                        }
-                    }
-                }
-                if (quest_available)
-                {
-                    args.Player.SendMessage("You are required to collect the following Item(s) to level up: " + item_list, Color.LightBlue);
-                    args.Player.SendMessage("After collecting those item, type /rank quest to complete the quest and level up!", Color.LightBlue);
-                    return;
-                }
-                return;
-            }
-            string item_list_2 = null;
-            bool quest_available_2 = false;
-            using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
-            {
-                while (reader.Read())
-                {
-                    if (args.Player.Group.Name == reader.Get<string>("StartRank"))
-                    {
-                        
-                        string item_tag = itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix"));
-                        item_list_2 = item_list_2 + item_tag;
-                    }
-                }
-            }
-            if (quest_available_2)
-            {
-                args.Player.SendMessage("You are required to collect the following Item(s) to level up: " + item_list_2, Color.LightBlue);
-                args.Player.SendMessage("After collecting those item, type /rank quest to complete the quest and level up!", Color.LightBlue);
-                return;
-            }
+            
         }
         #region config
         private void CreateConfig()
