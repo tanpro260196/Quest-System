@@ -42,6 +42,9 @@
       <HintPath>tshock-references\Mono.Data.Sqlite.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Multiplicity.Packets, Version=1.2.7.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Multiplicity.Packets.1.2.7\lib\net45\Multiplicity.Packets.dll</HintPath>
+    </Reference>
     <Reference Include="MySql.Data">
       <HintPath>tshock-references\MySql.Data.dll</HintPath>
       <Private>False</Private>
@@ -81,6 +84,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="tshock-references\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

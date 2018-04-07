@@ -421,6 +421,7 @@ namespace Quest
         #endregion
         private void questsearch(CommandArgs args)
         {
+            
             if ((args.Parameters.Count < 1))
             {
                 args.Player.SendMessage("Search for a Quest: /questsearch <search term> or /qs <search term>", Color.LightBlue);
@@ -732,16 +733,12 @@ namespace Quest
                 args.Player.SendMessage("[Quest System] You have completed Quest "+ thingneedtotake.DisplayName + " for "+ Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)) + "!", Color.LightBlue);
                 TShock.Log.ConsoleInfo("[Quest System] {0} has completed Quest {1} for {2}.", args.Player.Name, thingneedtotake.DisplayName, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
                 var num = QuestDB.Query("INSERT INTO QuestHistory (Time, Account, QuestName, WorldID, Reward) VALUES (@0, @1, @2, @3, @4);", DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss"), args.Player.Name, thingneedtotake.DisplayName, Main.worldID, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
-
-
                 string newaccountlist = accountlist_buy + args.Player.User.ID + ",";
                 if ((thingneedtotake.maxredeem != -1))
                 {
                     var update = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", newaccountlist, id);
                 }
-
             }
-
         }
         #region config
         private void CreateConfig()
@@ -914,7 +911,4 @@ namespace Quest
             this.name = TShockAPI.Utils.Instance.GetItemByIdOrName(netID.ToString())[0].Name;
         }
     }
-
-
-
 }
