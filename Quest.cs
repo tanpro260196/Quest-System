@@ -14,6 +14,7 @@ using System.Data;
 using Terraria.Localization;
 using Microsoft.Xna.Framework;
 using System.Text.RegularExpressions;
+using Multiplicity;
 
 namespace Quest
 {
@@ -183,7 +184,7 @@ namespace Quest
                         }
                         else if (!Main.hardMode)
                         {
-                            if (((rnd.Next(1, 100) >= config.percent_not_choosen)) && (reader.Get<string>("Status") == "Disabled"))
+                            if (((rnd.Next(1, 100) >= config.percent_not_choosen)) && (reader.Get<string>("Status") == "Disabled") && !hmcheck)
                             {
                                 i++;
                                 var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
@@ -264,7 +265,7 @@ namespace Quest
                         }
                         else if (!Main.hardMode)
                         {
-                            if (((rnd.Next(1, 100) >= config.percent_not_choosen)) && (reader.Get<string>("Status") == "Disabled"))
+                            if (((rnd.Next(1, 100) >= config.percent_not_choosen)) && (reader.Get<string>("Status") == "Disabled") && !hmcheck)
                             {
                                 i++;
                                 var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
@@ -430,6 +431,7 @@ namespace Quest
         #endregion
         private void questsearch(CommandArgs args)
         {
+            
             if ((args.Parameters.Count < 1))
             {
                 args.Player.SendMessage("Search for a Quest: /questsearch <search term> or /qs <search term>", Color.LightBlue);
