@@ -9,3 +9,5 @@
 *.ide
 .vs/Quest/v15/.suo
 *.ide
+*.cache
+*.cache
