@@ -23,6 +23,7 @@ namespace Quest
     {
         public static IDbConnection QuestDB;
         private Config config;
+        private RankConfig rankconfig;
         public override Version Version
         {
             get { return new Version("1.0.0.0"); }
@@ -52,6 +53,7 @@ namespace Quest
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ForceUpdate, "forcequestupdate", "fqu"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ReloadConfig, "reloadquest", "rq"));
             ReadConfig();
+            ReadRankConfig();
 
             switch (TShock.Config.StorageType.ToLower())
             {
@@ -87,14 +89,6 @@ namespace Quest
                new SqlColumn("QuestName", MySqlDbType.String, 100),
                new SqlColumn("WorldID", MySqlDbType.Int32),
                new SqlColumn("Reward", MySqlDbType.String, 100)));
-
-            sqlcreator.EnsureTableStructure(new SqlTable("RankQuest",
-               new SqlColumn("netID", MySqlDbType.String, 200),
-               new SqlColumn("ItemName", MySqlDbType.VarChar) { Length = 50 },
-               new SqlColumn("Stack", MySqlDbType.String, 100),
-               new SqlColumn("Prefix", MySqlDbType.Int32),
-               new SqlColumn("StartRank", MySqlDbType.String, 100),
-               new SqlColumn("FinalRank", MySqlDbType.String, 100)));
 
             UpdateDB();
         }
@@ -752,134 +746,332 @@ namespace Quest
         }
         private void rankquest(CommandArgs args) 
         {
-            if ((args.Parameters.Count == 0) || (args.Parameters[0] == "up"))
+            int rankforkcount = 0;
+            var destinationlist = new List<string> {};
+            foreach (var quest in rankconfig.All)
             {
-                string item_list = null;
-                bool quest_available = false;
-                using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
+                if (quest.startrank == args.Player.Group.Name)
                 {
-                    while (reader.Read())
+                    destinationlist.Add(quest.finalrank);
+                    rankforkcount++;
+                }
+            }
+            if ((rankforkcount > 1) && (args.Parameters.Count == 0 || args.Parameters[0] == "up"))
+            {
+                args.Player.SendMessage("[Quest System] There are " + rankforkcount + " available Factions, their Quest and Rank-up Command are: ", Color.LightBlue);
+                args.Player.SendMessage("", Color.Blue);
+                foreach (var classname in destinationlist)
+                {
+                    foreach (var quest in rankconfig.All)
                     {
-                        if (args.Player.Group.Name == reader.Get<string>("StartRank"))
+                        if ((quest.startrank == args.Player.Group.Name) && (quest.finalrank == classname))
                         {
-
-                            string item_tag = itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix"));
-                            item_list = item_list + item_tag;
+                            string itemlist = null;
+                            foreach (var material in quest.IncludeItems)
+                            {
+                                itemlist = itemlist + itemtotag(material.stack, material.netID, material.prefix);
+                            }
+                            args.Player.SendMessage("* Items: " + itemlist, Color.Yellow);
+                            args.Player.SendMessage("* /rank \"" + classname + "\" (costs " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(rankconfig.questmultiplier*quest.price)) + ")", Color.Yellow);
+                            args.Player.SendMessage("", Color.Blue);
                         }
                     }
                 }
-                if (quest_available)
-                {
-                    args.Player.SendMessage("You are required to collect the following Item(s) to level up: " + item_list, Color.LightBlue);
-                    args.Player.SendMessage("After collecting those item, type /rank quest to complete the quest and level up!", Color.LightBlue);
-                    return;
-                }
                 return;
             }
-            if (args.Parameters[0] == "quest" || args.Parameters[0] == "q")
-            {
-                args.Player.SendMessage("Scanning for required Items...", Color.LightBlue);
-                bool confirm_success = false;
-                using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
-                {
-                    while (reader.Read())
-                    {
-                        
 
+            if (rankforkcount > 1 && (destinationlist.Contains(args.Parameters[0])))
+            {
+                bool questavail = false;
+                RankQuestsEntry questtodo = null;
+                foreach (RankQuestsEntry rankquest in rankconfig.All)
+                {
+                    if ((rankquest.startrank == args.Player.Group.Name) && (rankquest.finalrank == args.Parameters[0]))
+                    {
+                        questtodo = rankquest;
+                        questavail = true;
+                    }
+                }
+                if (!questavail)
+                {
+                    args.Player.SendMessage("There are no quest available for this rank. You can level up directly using: /rank up.", Color.LightBlue);
+                    return;
+                }
+                if (questtodo.hardmode && !Main.hardMode)
+                {
+                    args.Player.SendMessage("This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightBlue);
+                    return;
+                }
+                bool confirm_success = false;
+                foreach (var iteminlist in questtodo.IncludeItems)
+                {
+                    bool exist2 = false;
+                    var items_in_inventory = new Item();
+                    int prefix_in_config = iteminlist.prefix;
+                    for (int i = 0; i < 50; i++)
+                    {
+                        items_in_inventory = args.Player.TPlayer.inventory[i];
+                        //If prefix = 0 in config, ignore prefix.
+                        if (iteminlist.prefix == 0)
+                        {
+                            prefix_in_config = items_in_inventory.prefix;
+                        }
+                        // Loops through the player's inventory
+                        if ((items_in_inventory.netID == iteminlist.netID) && (items_in_inventory.stack >= iteminlist.stack) && items_in_inventory.prefix == prefix_in_config)
+                        {
+                            confirm_success = true;
+                            exist2 = true;
+                            break;
+                        }
+                    }
+                    if (!exist2)
+                    {
+                        args.Player.SendMessage("We cannot find this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + ". There maybe more item(s) missing, please check the quest's requirement again.", Color.LightBlue);
+                        confirm_success = false;
+                        return;
+                    }
+                }
+
+                var UsernameBankAccount = SEconomyPlugin.Instance.GetBankAccount(args.Player.Name);
+                var playeramount = UsernameBankAccount.Balance;
+                Money amount = -questtodo.price;
+                Money amount2 = questtodo.price;
+                var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver;
+                if (args.Player == null || UsernameBankAccount == null)
+                {
+                    args.Player.SendMessage("Can't find the account for " + args.Player.Name + ".", Color.LightBlue);
+                    return;
+                }
+                if (playeramount < amount2 * rankconfig.questmultiplier)
+                {
+                    args.Player.SendMessage("You need at least " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(rankconfig.questmultiplier * questtodo.price)) + " to become a [" + questtodo.finalrank + "]. But you only have " + UsernameBankAccount.Balance + " in your account.", Color.LightBlue);
+                    return;
+                }
+
+                if (confirm_success)
+                {
+                    foreach (var iteminlist in questtodo.IncludeItems)
+                    {
                         bool exist2 = false;
                         var items_in_inventory = new Item();
-                        int prefix_in_config = reader.Get<int>("Prefix");
+                        int prefix_in_config = iteminlist.prefix;
 
                         for (int i = 0; i < 50; i++)
                         {
                             items_in_inventory = args.Player.TPlayer.inventory[i];
                             //If prefix = 0 in config, ignore prefix.
-                            if (reader.Get<int>("Prefix") == 0)
+                            if (iteminlist.prefix == 0)
                             {
                                 prefix_in_config = items_in_inventory.prefix;
                             }
                             // Loops through the player's inventory
-                            if ((items_in_inventory.netID == reader.Get<int>("netID")) && (items_in_inventory.stack >= reader.Get<int>("Stack")) && items_in_inventory.prefix == prefix_in_config)
+                            if ((items_in_inventory.netID == iteminlist.netID) && (items_in_inventory.stack >= iteminlist.stack) && items_in_inventory.prefix == prefix_in_config)
                             {
                                 confirm_success = true;
                                 exist2 = true;
+                                args.Player.TPlayer.inventory[i].stack -= iteminlist.stack;
+                                NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, NetworkText.Empty, args.Player.Index, i);
                                 break;
                             }
                         }
                         if (!exist2)
                         {
-                            args.Player.SendMessage("You are missing this item: " + itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix")), Color.LightBlue);
+                            args.Player.SendMessage("Do not take this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + " out of your inventory!", Color.LightBlue);
                             confirm_success = false;
                             return;
-                        }
-                    }
-                }
-
-                if (confirm_success)
-                {
-                    using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
-                    {
-                        while (reader.Read())
-                        {
-
-
-                            bool exist2 = false;
-                            var items_in_inventory = new Item();
-                            int prefix_in_config = reader.Get<int>("Prefix");
-
-                            for (int i = 0; i < 50; i++)
-                            {
-                                items_in_inventory = args.Player.TPlayer.inventory[i];
-                                //If prefix = 0 in config, ignore prefix.
-                                if (reader.Get<int>("Prefix") == 0)
-                                {
-                                    prefix_in_config = items_in_inventory.prefix;
-                                }
-                                // Loops through the player's inventory
-                                if ((items_in_inventory.netID == reader.Get<int>("netID")) && (items_in_inventory.stack >= reader.Get<int>("Stack")) && items_in_inventory.prefix == prefix_in_config)
-                                {
-                                    confirm_success = true;
-                                    exist2 = true;
-                                    args.Player.TPlayer.inventory[i].stack -= reader.Get<int>("Stack");
-                                    NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, NetworkText.Empty, args.Player.Index, i);
-                                    break;
-                                }
-                            }
-                            if (!exist2)
-                            {
-                                args.Player.SendMessage("Do not take this item: " + itemtotag(reader.Get<int>("Stack"), reader.Get<int>("netID"), reader.Get<int>("Prefix")) + " out of your inventory!", Color.LightBlue);
-                                confirm_success = false;
-                                return;
-                            }
                         }
                     }
                 }
                 //If all items is found. Remove from inventory and change group.
                 if (confirm_success)
                 {
-                    string finalgroupname = null;
-                    using (var reader = QuestDB.QueryReader("SELECT * FROM RankQuest"))
+                    int paid = Convert.ToInt32(Math.Ceiling(amount * rankconfig.questmultiplier));
+                    SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UsernameBankAccount, paid,
+                                                                         Journalpayment, string.Format("Rank up to {0}", questtodo.finalrank),
+                                                                         string.Format("Rank " + questtodo.finalrank));
+                    TShock.Users.SetUserGroup(args.Player.User, questtodo.finalrank);
+                    TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/er \"" + args.Player.Name + "\"" + "-h +" + questtodo.hpup);
+                    TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/er \"" + args.Player.Name + "\"" + "-m +" + questtodo.manaup);
+                    args.Player.SendMessage("Your HP has increase by " + questtodo.hpup + ".", Color.DeepSkyBlue);
+                    args.Player.SendMessage("Your Mana has increase by " + questtodo.manaup + ".", Color.DeepSkyBlue);
+                    if (questtodo.buffname != null)
                     {
-                        while (reader.Read())
-                        {
-                            if (args.Player.Group.Name == reader.Get<string>("StartRank"))
-                            {
-                                finalgroupname = reader.Get<string>("FinalRank");
-                                break;
-                            }
-                        }
+                        TShockAPI.Commands.HandleCommand(TSPlayer.Server, ".gpermabuff \"" + questtodo.buffname + "\"" + " \"" + args.Player.Name + "\"");
+                        args.Player.SendMessage("You has been granted " + questtodo.buffname + " buff permanently.", Color.DeepSkyBlue);
                     }
-                    TShockAPI.Group finalgroup = TShock.Utils.GetGroup(finalgroupname);
-                    args.Player.Group.AssignTo(finalgroup);
-                    args.Player.SendMessage("Congratulation, You have completed the level's quest and leveled up to " + finalgroup.Name + "!" ,Color.LightBlue);
+                    args.Player.SendMessage("Congratulation, You have completed the Faction's quest and become a " + questtodo.finalrank + "!", Color.DeepSkyBlue);
+                    TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/firework \"" + args.Player.Name + "\"");
+                    TShock.Utils.Broadcast(args.Player.Name + " has become a " + questtodo.finalrank, Color.DeepSkyBlue);
+                    args.Player.SendMessage("", Color.DeepSkyBlue);
                     return;
                 }
                 return;
             }
-            //list quest's items
-            
+
+            if (rankforkcount == 1 && ((args.Parameters.Count == 0) || (args.Parameters[0] == "up")))
+            {
+                string item_list = null;
+                bool quest_available = false;
+                bool hardmoderequire = false;
+                int price = 0;
+
+                foreach (RankQuestsEntry rankquest in rankconfig.All)
+                {
+                    if (rankquest.startrank == args.Player.Group.Name)
+                    {
+                        hardmoderequire = rankquest.hardmode;
+                        price = rankquest.price;
+                        foreach (var items_config in rankquest.IncludeItems)
+                        {
+                            quest_available = true;
+                            string item_tag = itemtotag(items_config.stack, items_config.netID, items_config.prefix);
+                            item_list = item_list + item_tag;
+                        }
+                    }
+                }
+                if (hardmoderequire && !Main.hardMode)
+                {
+                    args.Player.SendMessage("This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightBlue);
+                    return;
+                }
+                if (quest_available)
+                {
+                    args.Player.SendMessage("* Quest Items list: " + item_list, Color.Yellow);
+                    args.Player.SendMessage("* Rank-up command: /rank quest (costs " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(rankconfig.questmultiplier * price)) + ")", Color.Yellow);
+                    return;
+                }
+                return;
+            }
+            if (rankforkcount == 1 && (args.Parameters[0] == "quest" || args.Parameters[0] == "q"))
+            {
+                bool questavail = false;
+                RankQuestsEntry questtodo = null;
+                foreach (RankQuestsEntry rankquest in rankconfig.All)
+                {
+                    if (rankquest.startrank == args.Player.Group.Name)
+                    {
+                        questtodo = rankquest;
+                        questavail = true;
+                    }
+                }
+                if (questtodo.hardmode && !Main.hardMode)
+                {
+                    args.Player.SendMessage("[Rank System] This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightBlue);
+                    return;
+                }
+                if (!questavail)
+                {
+                    args.Player.SendMessage("There are no quest available for this rank. You can level up directly using: /rank up.", Color.LightBlue);
+                    return;
+                }
+                bool confirm_success = false;
+                foreach (var iteminlist in questtodo.IncludeItems)
+                {           
+                    bool exist2 = false;
+                    var items_in_inventory = new Item();
+                    int prefix_in_config = iteminlist.prefix;
+                    for (int i = 0; i < 50; i++)
+                    {
+                        items_in_inventory = args.Player.TPlayer.inventory[i];
+                        //If prefix = 0 in config, ignore prefix.
+                        if (iteminlist.prefix == 0)
+                        {
+                            prefix_in_config = items_in_inventory.prefix;
+                        }
+                        // Loops through the player's inventory
+                        if ((items_in_inventory.netID == iteminlist.netID) && (items_in_inventory.stack >= iteminlist.stack) && items_in_inventory.prefix == prefix_in_config)
+                        {
+                            confirm_success = true;
+                            exist2 = true;
+                            break;
+                        }
+                    }
+                    if (!exist2)
+                    {
+                        args.Player.SendMessage("We cannot find this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + ". There maybe more item(s) missing, please check the quest's requirement again.", Color.LightBlue);
+                        confirm_success = false;
+                        return;
+                    }   
+                }
+
+                var UsernameBankAccount = SEconomyPlugin.Instance.GetBankAccount(args.Player.Name);
+                var playeramount = UsernameBankAccount.Balance;
+                Money amount = -questtodo.price;
+                Money amount2 = questtodo.price;
+                var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver;
+                if (args.Player == null || UsernameBankAccount == null)
+                {
+                    args.Player.SendMessage("Can't find the account for " + args.Player.Name + ".", Color.LightBlue);
+                    return;
+                }
+                if (playeramount < amount2*rankconfig.questmultiplier)
+                {
+                    args.Player.SendMessage("You need at least " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(rankconfig.questmultiplier * questtodo.price)) + " to become a [" + questtodo.finalrank + "]. But you only have " + UsernameBankAccount.Balance + " in your account.", Color.LightBlue);
+                    return;
+                }
+
+                if (confirm_success)
+                {
+                    foreach (var iteminlist in questtodo.IncludeItems)
+                    {
+                        bool exist2 = false;
+                        var items_in_inventory = new Item();
+                        int prefix_in_config = iteminlist.prefix;
+
+                        for (int i = 0; i < 50; i++)
+                        {
+                            items_in_inventory = args.Player.TPlayer.inventory[i];
+                            //If prefix = 0 in config, ignore prefix.
+                            if (iteminlist.prefix == 0)
+                            {
+                                prefix_in_config = items_in_inventory.prefix;
+                            }
+                            // Loops through the player's inventory
+                            if ((items_in_inventory.netID == iteminlist.netID) && (items_in_inventory.stack >= iteminlist.stack) && items_in_inventory.prefix == prefix_in_config)
+                            {
+                                confirm_success = true;
+                                exist2 = true;
+                                args.Player.TPlayer.inventory[i].stack -= iteminlist.stack;
+                                NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, NetworkText.Empty, args.Player.Index, i);
+                                break;
+                            }
+                        }
+                        if (!exist2)
+                        {
+                            args.Player.SendMessage("Do not take this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + " out of your inventory!", Color.LightBlue);
+                            confirm_success = false;
+                            return;
+                        }
+                    }
+                }
+                //If all items is found. Remove from inventory and change group.
+                if (confirm_success)
+                {
+                    int paid = Convert.ToInt32(Math.Ceiling(amount * rankconfig.questmultiplier));
+                    SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UsernameBankAccount, paid,
+                                                                         Journalpayment, string.Format("Rank up to {0}", questtodo.finalrank),
+                                                                         string.Format("Rank " + questtodo.finalrank));
+                    TShock.Users.SetUserGroup(args.Player.User, questtodo.finalrank);
+                    TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/er \"" + args.Player.Name + "\"" + "-h +" + questtodo.hpup);
+                    TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/er \"" + args.Player.Name + "\"" + "-m +" + questtodo.manaup);
+                    args.Player.SendMessage("Your HP has increase by " + questtodo.hpup + ".", Color.DeepSkyBlue);
+                    args.Player.SendMessage("Your Mana has increase by " + questtodo.manaup + ".", Color.DeepSkyBlue);
+                    if (questtodo.buffname != null)
+                    {
+                        TShockAPI.Commands.HandleCommand(TSPlayer.Server, ".gpermabuff \"" + questtodo.buffname + "\"" + " \"" + args.Player.Name + "\"");
+                        args.Player.SendMessage("You has been granted " + questtodo.buffname + " buff permanently.", Color.DeepSkyBlue);
+                    }
+                    args.Player.SendMessage("Congratulation, You have completed the Faction's quest and become a " + questtodo.finalrank + "!", Color.DeepSkyBlue);
+                    TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/firework \"" + args.Player.Name + "\"");
+                    TShock.Utils.Broadcast(args.Player.Name + " has become a " + questtodo.finalrank, Color.DeepSkyBlue);
+                    args.Player.SendMessage("", Color.DeepSkyBlue);
+                    return;
+                }
+                return;
+            }
         }
         #region config
+
         private void CreateConfig()
         {
             string filepath = Path.Combine(TShock.SavePath, "Quest.json");
@@ -942,13 +1134,76 @@ namespace Quest
         private void ReloadConfig(CommandArgs args)
         {
 
-            if (ReadConfig())
+            if (ReadConfig() && ReadRankConfig())
             {
                 UpdateDB();
                 args.Player.SendInfoMessage("Load success.");
                 return;
             }
             args.Player.SendErrorMessage("Load fails. Check log for more details.");
+        }
+
+        //----------------------------------------
+        //----------------------------------------
+
+        private void CreateRankConfig()
+        {
+            string filepath = Path.Combine(TShock.SavePath, "Rankquest.json");
+            try
+            {
+                using (var stream = new FileStream(filepath, FileMode.Create, FileAccess.Write, FileShare.Write))
+                {
+                    using (var sr = new StreamWriter(stream))
+                    {
+                        rankconfig = new RankConfig(1);
+                        var configString = JsonConvert.SerializeObject(rankconfig, Formatting.Indented);
+                        sr.Write(configString);
+                    }
+                    stream.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                TShock.Log.ConsoleError(ex.Message);
+            }
+        }
+        private bool ReadRankConfig()
+        {
+            string filepath = Path.Combine(TShock.SavePath, "Rankquest.json");
+            try
+            {
+                if (File.Exists(filepath))
+                {
+                    using (var stream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        using (var sr = new StreamReader(stream))
+                        {
+                            var configString = sr.ReadToEnd();
+                            rankconfig = JsonConvert.DeserializeObject<RankConfig>(configString);
+                            foreach (var element in rankconfig.All)
+                            {
+                                foreach (var element2 in element.IncludeItems)
+                                {
+                                    element2.Full();
+                                }
+                            }
+                        }
+                        stream.Close();
+                    }
+                    return true;
+                }
+                else
+                {
+                    TShock.Log.ConsoleInfo("Create new config file for Quest System Ranking Quest.");
+                    CreateRankConfig();
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                TShock.Log.ConsoleError(ex.Message);
+            }
+            return false;
         }
         #endregion
     }
@@ -1040,6 +1295,94 @@ namespace Quest
         public string name = "";
         public SimpleItem() { }
         public SimpleItem(int a)
+        {
+            this.name = TShockAPI.Utils.Instance.GetItemByIdOrName(a.ToString())[0].Name;
+            this.netID = TShockAPI.Utils.Instance.GetItemByIdOrName(a.ToString())[0].type;
+        }
+        public void Full()
+        {
+            this.netID = TShockAPI.Utils.Instance.GetItemByIdOrName((netID != 0) ? netID.ToString() : name)[0].type;
+            this.name = TShockAPI.Utils.Instance.GetItemByIdOrName(netID.ToString())[0].Name;
+        }
+    }
+
+    //-----------------------------------------------------
+    //-----------------------------------------------------
+
+
+
+    public class ReadDB2
+    {
+
+        public int counts;
+        public int pricedb;
+        public string actdb;
+        public string dnames;
+
+    }
+    public class RankConfig
+    {
+        public List<RankQuestsEntry> All;
+        public double questmultiplier;
+        public RankConfig()
+        { }
+        public RankConfig(int a)
+        {
+            questmultiplier = 1.0;
+            All = new List<RankQuestsEntry> { new RankQuestsEntry(1), new RankQuestsEntry(2) };
+        }
+    }
+    public class RankQuestsEntry
+    {
+        public string startrank = "start";
+        public string finalrank = "final";
+        public int price = 10000;
+        public int manaup = 1;
+        public int hpup = 1;
+        public string buffname = null;
+        public bool hardmode = false;
+        public List<RankSimpleItem> IncludeItems = new List<RankSimpleItem> { };
+        public RankQuestsEntry() { }
+        public RankQuestsEntry(int a)
+        {
+            if (a == 1)
+            {
+                var i1 = new RankSimpleItem(2760);
+                var i2 = new RankSimpleItem(2761);
+                var i3 = new RankSimpleItem(2762);
+                startrank = "start";
+                finalrank = "final";
+                price = 20000;
+                hardmode = true;
+                IncludeItems = new List<RankSimpleItem> { i1, i2, i3 };
+            }
+            if (a == 2)
+            {
+                price = 100;
+                hardmode = false;
+                for (int i = 0; i < 10; i++)
+                {
+                    IncludeItems.Add(new RankSimpleItem(i + 2702));
+                }
+            }
+            if (a == 3)
+            {
+                var i1 = new RankSimpleItem(2760);
+                startrank = "start2";
+                finalrank = "final2";
+                hardmode = false;
+                IncludeItems = new List<RankSimpleItem> { i1 };
+            }
+        }
+    }
+    public class RankSimpleItem
+    {
+        public int netID = 0;
+        public int stack = 1;
+        public int prefix = 0;
+        public string name = "";
+        public RankSimpleItem() { }
+        public RankSimpleItem(int a)
         {
             this.name = TShockAPI.Utils.Instance.GetItemByIdOrName(a.ToString())[0].Name;
             this.netID = TShockAPI.Utils.Instance.GetItemByIdOrName(a.ToString())[0].type;
