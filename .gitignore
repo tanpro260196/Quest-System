@@ -11,3 +11,4 @@
 *.ide
 *.cache
 *.cache
+/.vs/Quest/v16/Server/sqlite3
