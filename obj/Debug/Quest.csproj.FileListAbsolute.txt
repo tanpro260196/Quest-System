@@ -1,8 +1,6 @@
-E:\OneDrive\Documents\GitHub\Quest-System\obj\Debug\Quest.csprojResolveAssemblyReference.cache
 E:\OneDrive\Documents\GitHub\Quest-System\obj\Debug\Quest.csproj.CoreCompileInputs.cache
 E:\OneDrive\Documents\GitHub\Quest-System\bin\Debug\Quest System.dll
 E:\OneDrive\Documents\GitHub\Quest-System\bin\Debug\Quest System.pdb
-E:\OneDrive\Documents\GitHub\Quest-System\bin\Debug\Multiplicity.Packets.dll
-E:\OneDrive\Documents\GitHub\Quest-System\obj\Debug\Quest.csproj.CopyComplete
 E:\OneDrive\Documents\GitHub\Quest-System\obj\Debug\Quest System.dll
 E:\OneDrive\Documents\GitHub\Quest-System\obj\Debug\Quest System.pdb
+E:\OneDrive\Documents\GitHub\Quest-System\obj\Debug\Quest.csprojAssemblyReference.cache
