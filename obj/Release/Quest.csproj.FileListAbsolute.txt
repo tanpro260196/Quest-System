@@ -20,4 +20,4 @@ E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest System.dll
 E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest System.pdb
 E:\OneDrive\Documents\GitHub\Quest-System\bin\Release\Multiplicity.Packets.dll
 E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest.csproj.CopyComplete
-E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest.csprojResolveAssemblyReference.cache
+E:\OneDrive\Documents\GitHub\Quest-System\obj\Release\Quest.csprojAssemblyReference.cache

@@ -15,6 +15,7 @@ using Terraria.Localization;
 using Microsoft.Xna.Framework;
 using System.Text.RegularExpressions;
 using Multiplicity;
+using Crimson.CustomEvents.Extensions;
 
 namespace Quest
 {
@@ -113,91 +114,10 @@ namespace Quest
         }
         public void DailyUpdate()
         {
-            TShock.Utils.Broadcast("[Quest System] Generating new quest list. Lag may result from this.", Color.LightBlue);
             Random rnd = new Random();
             int quest_quantity = rnd.Next(config.min_avail_quest, config.max_avail_quest);
             int i = 0;
-            while (i < quest_quantity)
-            {
-                i = 0;
-                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-                {
-                    while (reader.Read())
-                    {
-                        int refreshint = 0;
-                        foreach (var questitem in config.All)
-                        {
-                            if (questitem.DisplayName == reader.Get<string>("QuestName"))
-                            {
-                                refreshint = questitem.refreshtime;
-                            }
-                        }
-                        int timepassed = Convert.ToInt32((DateTime.UtcNow - DateTime.Parse(reader.Get<string>("LastRefresh"))).TotalSeconds);
-                        if ((timepassed >= (refreshint * config.minrefreshsecond)))
-                        {
-                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
-                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
-                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, reader.Get<int>("ID"));
-                        }
-                    }
-                }
-                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-                {
-                    while (reader.Read())
-                    {
-                        if (reader.Get<string>("Status") == "Enabled")
-                        {
-                            i++;
-                        }
-                    }
-                }
-                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-                {
-                    while ((reader.Read()) && (i < quest_quantity))
-                    {
-                        bool hmcheck = false;
-                        int refreshint = 0;
-                        foreach (var questitem in config.All)
-                        {
-                            if (questitem.DisplayName == reader.Get<string>("QuestName"))
-                            {
-                                hmcheck = questitem.hardmode;
-                                refreshint = questitem.refreshtime;
-                            }
-                        }
-                        if (Main.hardMode)
-                        {
-                            if (((rnd.Next(1, 100) >= config.percent_not_choosen)) && (reader.Get<string>("Status") == "Disabled"))
-                            {
-                                i++;
-                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
-                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
-                                var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, reader.Get<int>("ID"));
-                            }
-
-                        }
-                        else if (!Main.hardMode)
-                        {
-                            if (((rnd.Next(1, 100) >= config.percent_not_choosen)) && (reader.Get<string>("Status") == "Disabled") && !hmcheck)
-                            {
-                                i++;
-                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
-                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
-                                var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, reader.Get<int>("ID"));
-                            }
-                        }
-                    }
-                }
-            }
-            TShock.Utils.Broadcast("[Quest System] Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
-            TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + Convert.ToString(i) + ".", Color.LightBlue);
-        }
-        private void ForceUpdate(CommandArgs args)
-        {
-            TShock.Utils.Broadcast("[Quest System] Generating new quest list. Lag may result from this.", Color.LightBlue);
-            Random rnd = new Random();
-            int quest_quantity = rnd.Next(config.min_avail_quest, config.max_avail_quest);
-            int i = 0;
+            int total_quest_inDB = 0;
             while (i < quest_quantity)
             {
                 i = 0;
@@ -226,52 +146,145 @@ namespace Quest
                 {
                     while (reader.Read())
                     {
+                        total_quest_inDB++;
                         if (reader.Get<string>("Status") == "Enabled")
                         {
                             i++;
                         }
                     }
                 }
-                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
+
+                while (i < quest_quantity)
                 {
-                    while ((reader.Read()) && (i < quest_quantity))
+                    using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
                     {
+                        bool quest_available_for_enable = false;
+                        int nextquest = rnd.Next(1, total_quest_inDB);
+                        int q_id = 0;
                         bool hmcheck = false;
                         int refreshint = 0;
-                        foreach (var questitem in config.All)
+                        while (reader.Read())
                         {
-                            if (questitem.DisplayName == reader.Get<string>("QuestName"))
+                            if ((reader.Get<int>("ID") == nextquest) && (reader.Get<string>("Status") == "Disabled"))
                             {
-                                hmcheck = questitem.hardmode;
-                                refreshint = questitem.refreshtime;
+                                q_id = reader.Get<int>("ID");
+                                foreach (var questitem in config.All)
+                                {
+                                    if (questitem.DisplayName == reader.Get<string>("QuestName"))
+                                    {
+                                        hmcheck = questitem.hardmode;
+                                        refreshint = questitem.refreshtime;
+                                        quest_available_for_enable = true;
+                                    }
+                                }
                             }
                         }
-                        if (Main.hardMode)
+                        if (Main.hardMode && quest_available_for_enable)
                         {
-                            if (((rnd.Next(1, 100) >= config.percent_not_choosen)) && (reader.Get<string>("Status") == "Disabled"))
-                            {
-                                i++;
-                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
-                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
-                                var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, reader.Get<int>("ID"));
-                            }
-
+                            i++;
+                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", q_id);
+                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, q_id);
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, q_id);
                         }
-                        else if (!Main.hardMode)
+                        else if ((!Main.hardMode) && !hmcheck && quest_available_for_enable)
                         {
-                            if (((rnd.Next(1, 100) >= config.percent_not_choosen)) && (reader.Get<string>("Status") == "Disabled") && !hmcheck)
-                            {
-                                i++;
-                                var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", reader.Get<int>("ID"));
-                                var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
-                                var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, reader.Get<int>("ID"));
-                            }
+                            i++;
+                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", q_id);
+                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, q_id);
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, q_id);
                         }
                     }
                 }
             }
             TShock.Utils.Broadcast("[Quest System] Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
-            TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + Convert.ToString(i) + ".", Color.LightBlue);  
+            TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + Convert.ToString(i).Colorize(Color.Yellow) + ".", Color.LightBlue);
+        }
+        private void ForceUpdate(CommandArgs args)
+        {
+            Random rnd = new Random();
+            int quest_quantity = rnd.Next(config.min_avail_quest, config.max_avail_quest);
+            int i = 0;
+            int total_quest_inDB = 0;
+            while (i < quest_quantity)
+            {
+                i = 0;
+                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
+                {
+                    while (reader.Read())
+                    {
+                        int refreshint = 0;
+                        foreach (var questitem in config.All)
+                        {
+                            if (questitem.DisplayName == reader.Get<string>("QuestName"))
+                            {
+                                refreshint = questitem.refreshtime;
+                            }
+                        }
+                        int timepassed = Convert.ToInt32((DateTime.UtcNow - DateTime.Parse(reader.Get<string>("LastRefresh"))).TotalSeconds);
+                        if ((timepassed >= refreshint * config.minrefreshsecond))
+                        {
+                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
+                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, reader.Get<int>("ID"));
+                        }
+                    }
+                }
+                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
+                {
+                    while (reader.Read())
+                    {
+                        total_quest_inDB++;
+                        if (reader.Get<string>("Status") == "Enabled")
+                        {
+                            i++;
+                        }
+                    }
+                }
+
+                while (i < quest_quantity)
+                {
+                    using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
+                    {
+                        bool quest_available_for_enable = false;
+                        int nextquest = rnd.Next(1, total_quest_inDB);
+                        int q_id = 0;
+                        bool hmcheck = false;
+                        int refreshint = 0;
+                        while (reader.Read())
+                        {
+                            if ((reader.Get<int>("ID") == nextquest) && (reader.Get<string>("Status") == "Disabled"))
+                            {
+                                q_id = reader.Get<int>("ID");
+                                foreach (var questitem in config.All)
+                                {
+                                    if (questitem.DisplayName == reader.Get<string>("QuestName"))
+                                    {
+                                        hmcheck = questitem.hardmode;
+                                        refreshint = questitem.refreshtime;
+                                        quest_available_for_enable = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (Main.hardMode && quest_available_for_enable)
+                        {
+                            i++;
+                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", q_id);
+                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, q_id);
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, q_id);
+                        }
+                        else if ((!Main.hardMode) && !hmcheck && quest_available_for_enable)
+                        {
+                            i++;
+                            var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", q_id);
+                            var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, q_id);
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, q_id);
+                        }
+                    }
+                }
+            }
+            TShock.Utils.Broadcast("[Quest System] Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
+            TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + Convert.ToString(i).Colorize(Color.Yellow) + ".", Color.LightBlue);
         }
         #endregion
         #region misc
@@ -1224,7 +1237,6 @@ namespace Quest
         public string questregion;
         public int min_avail_quest;
         public int max_avail_quest;
-        public int percent_not_choosen;
         public int minrefreshsecond;
         public Config()
         { }
@@ -1235,7 +1247,6 @@ namespace Quest
             questregion = null;
             min_avail_quest = 5;
             max_avail_quest = 20;
-            percent_not_choosen = 70;
             minrefreshsecond = 86400;
             All = new List<QuestsEntry> { new QuestsEntry(1), new QuestsEntry(2) };
         }
