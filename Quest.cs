@@ -15,6 +15,7 @@ using Terraria.Localization;
 using Microsoft.Xna.Framework;
 using System.Text.RegularExpressions;
 using Crimson.CustomEvents.Extensions;
+using TShockAPI.Hooks;
 
 namespace Quest
 {
@@ -24,6 +25,7 @@ namespace Quest
         public static IDbConnection QuestDB;
         private Config config;
         private RankConfig rankconfig;
+        private DateTime LastCheck2;
         public override Version Version
         {
             get { return new Version("1.0.0.0"); }
@@ -51,10 +53,17 @@ namespace Quest
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", rankquest, "rank"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", questsearch, "questsearch", "qs"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ForceUpdate, "forcequestupdate", "fqu"));
-            TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ReloadConfig, "reloadquest", "rq"));
+            GeneralHooks.ReloadEvent += ReloadConfig;
             ReadConfig();
             ReadRankConfig();
-
+            if (config.lastcheck == null)
+            {
+                LastCheck2 = DateTime.UtcNow;
+                updatelastrefresh();
+            }
+            else
+            { LastCheck2 = DateTime.Parse(config.lastcheck); }
+            
             switch (TShock.Config.StorageType.ToLower())
             {
                 case "mysql":
@@ -101,15 +110,20 @@ namespace Quest
             base.Dispose(disposing);
         }
         #region DailyCheck
-        private DateTime LastCheck2 = DateTime.UtcNow;
-        private Dictionary<string, int> TimeLeft = new Dictionary<string, int>();
         private void OnUpdate(EventArgs args)
         {
             if ((DateTime.UtcNow - LastCheck2).TotalSeconds >= config.minrefreshsecond)
             {
                 LastCheck2 = DateTime.UtcNow;
+                updatelastrefresh();
                 DailyUpdate();
             }
+        }
+        public void updatelastrefresh()
+        {
+            config.lastcheckwrite(LastCheck2);
+            CreateConfig();
+            return;
         }
         public void DailyUpdate()
         {
@@ -282,6 +296,8 @@ namespace Quest
                     }
                 }
             }
+            LastCheck2 = DateTime.UtcNow;
+            updatelastrefresh();
             TShock.Utils.Broadcast("[Quest System] Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
             TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + Convert.ToString(i).Colorize(Color.Yellow) + ".", Color.LightBlue);
         }
@@ -1093,7 +1109,10 @@ namespace Quest
                 {
                     using (var sr = new StreamWriter(stream))
                     {
-                        config = new Config(1);
+                        if (File.Exists(filepath))
+                        { }
+                        else
+                            config = new Config(1);
                         var configString = JsonConvert.SerializeObject(config, Formatting.Indented);
                         sr.Write(configString);
                     }
@@ -1143,16 +1162,16 @@ namespace Quest
             }
             return false;
         }
-        private void ReloadConfig(CommandArgs args)
+        private void ReloadConfig(ReloadEventArgs args)
         {
 
             if (ReadConfig() && ReadRankConfig())
             {
                 UpdateDB();
-                args.Player.SendInfoMessage("Load success.");
+                args.Player.SendInfoMessage("[Quest System] Reload success.");
                 return;
             }
-            args.Player.SendErrorMessage("Load fails. Check log for more details.");
+            args.Player.SendErrorMessage("[Quest System] Load fails. Check log for more details.");
         }
 
         //----------------------------------------
@@ -1237,6 +1256,12 @@ namespace Quest
         public int min_avail_quest;
         public int max_avail_quest;
         public int minrefreshsecond;
+        public string lastcheck;
+        public void lastcheckwrite(DateTime alltimelastcheck )
+        {
+            lastcheck = alltimelastcheck.ToString();
+            return;
+        }
         public Config()
         { }
         public Config(int a)
@@ -1247,6 +1272,7 @@ namespace Quest
             min_avail_quest = 5;
             max_avail_quest = 20;
             minrefreshsecond = 86400;
+            lastcheck = DateTime.UtcNow.ToString();
             All = new List<QuestsEntry> { new QuestsEntry(1), new QuestsEntry(2) };
         }
     }
