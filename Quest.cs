@@ -58,7 +58,7 @@ namespace Quest
             ReadRankConfig();
             if (config.lastcheck == null)
             {
-                LastCheck2 = DateTime.UtcNow;
+                LastCheck2 = DateTime.Now;
                 updatelastrefresh();
             }
             else
@@ -112,9 +112,9 @@ namespace Quest
         #region DailyCheck
         private void OnUpdate(EventArgs args)
         {
-            if ((DateTime.UtcNow - LastCheck2).TotalSeconds >= config.minrefreshsecond)
+            if ((DateTime.Now - LastCheck2).TotalSeconds >= config.minrefreshsecond)
             {
-                LastCheck2 = DateTime.UtcNow;
+                LastCheck2 = DateTime.Now;
                 updatelastrefresh();
                 DailyUpdate();
             }
@@ -146,12 +146,12 @@ namespace Quest
                                 refreshint = questitem.refreshtime;
                             }
                         }
-                        int timepassed = Convert.ToInt32((DateTime.UtcNow - DateTime.Parse(reader.Get<string>("LastRefresh"))).TotalSeconds);
+                        int timepassed = Convert.ToInt32((DateTime.Now - DateTime.Parse(reader.Get<string>("LastRefresh"))).TotalSeconds);
                         if ((timepassed >= refreshint * config.minrefreshsecond))
                         {
                             var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
                             var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
-                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, reader.Get<int>("ID"));
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.Now, reader.Get<int>("ID"));
                         }
                     }
                 }
@@ -197,14 +197,14 @@ namespace Quest
                             i++;
                             var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", q_id);
                             var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, q_id);
-                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, q_id);
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.Now, q_id);
                         }
                         else if ((!Main.hardMode) && !hmcheck && quest_available_for_enable)
                         {
                             i++;
                             var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", q_id);
                             var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, q_id);
-                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, q_id);
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.Now, q_id);
                         }
                     }
                 }
@@ -233,12 +233,12 @@ namespace Quest
                                 refreshint = questitem.refreshtime;
                             }
                         }
-                        int timepassed = Convert.ToInt32((DateTime.UtcNow - DateTime.Parse(reader.Get<string>("LastRefresh"))).TotalSeconds);
+                        int timepassed = Convert.ToInt32((DateTime.Now - DateTime.Parse(reader.Get<string>("LastRefresh"))).TotalSeconds);
                         if ((timepassed >= refreshint * config.minrefreshsecond))
                         {
                             var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Disabled", reader.Get<int>("ID"));
                             var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, reader.Get<int>("ID"));
-                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, reader.Get<int>("ID"));
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.Now, reader.Get<int>("ID"));
                         }
                     }
                 }
@@ -284,19 +284,19 @@ namespace Quest
                             i++;
                             var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", q_id);
                             var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, q_id);
-                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, q_id);
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.Now, q_id);
                         }
                         else if ((!Main.hardMode) && !hmcheck && quest_available_for_enable)
                         {
                             i++;
                             var update_status = QuestDB.Query("UPDATE QuestCount SET Status=@0 WHERE ID= @1;", "Enabled", q_id);
                             var update_completionlist = QuestDB.Query("UPDATE QuestCount SET Accounts=@0 WHERE ID= @1;", null, q_id);
-                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.UtcNow, q_id);
+                            var update_lastcheck = QuestDB.Query("UPDATE QuestCount SET LastRefresh=@0 WHERE ID= @1;", DateTime.Now, q_id);
                         }
                     }
                 }
             }
-            LastCheck2 = DateTime.UtcNow;
+            LastCheck2 = DateTime.Now;
             updatelastrefresh();
             TShock.Utils.Broadcast("[Quest System] Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
             TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + Convert.ToString(i).Colorize(Color.Yellow) + ".", Color.LightBlue);
@@ -340,7 +340,7 @@ namespace Quest
                 }
                 if (exist == false)
                 {
-                    var add = QuestDB.Query("INSERT INTO QuestCount (QuestName, Status, LastRefresh) VALUES (@0, @1, @2);", questitem.DisplayName, "Disabled", DateTime.UtcNow);
+                    var add = QuestDB.Query("INSERT INTO QuestCount (QuestName, Status, LastRefresh) VALUES (@0, @1, @2);", questitem.DisplayName, "Disabled", DateTime.Now);
                 }
             }
         }
@@ -489,7 +489,7 @@ namespace Quest
                     foundsth = true;
                     DateTime lastcheck = DateTime.Parse(GetLastCheck(questlist.DisplayName));
                     int refreshint = questlist.refreshtime;
-                    int timeleft = Convert.ToInt32((refreshint * config.minrefreshsecond - (DateTime.UtcNow - lastcheck).TotalSeconds) / config.minrefreshsecond);
+                    int timeleft = Convert.ToInt32((refreshint * config.minrefreshsecond - (DateTime.Now - lastcheck).TotalSeconds) / config.minrefreshsecond);
                     if (timeleft <= 0)
                     {
                         timeleft = 0;
@@ -574,7 +574,7 @@ namespace Quest
                                     refreshint = questitem.refreshtime;
                                 }
                             }
-                            double timeleft = ((refreshint * config.minrefreshsecond - (DateTime.UtcNow - lastcheck).TotalSeconds) / config.minrefreshsecond);
+                            double timeleft = ((refreshint * config.minrefreshsecond - (DateTime.Now - lastcheck).TotalSeconds) / config.minrefreshsecond);
                             if (timeleft <= 0)
                             {
                                 timeleft = 0;
@@ -1272,7 +1272,7 @@ namespace Quest
             min_avail_quest = 5;
             max_avail_quest = 20;
             minrefreshsecond = 86400;
-            lastcheck = DateTime.UtcNow.ToString();
+            lastcheck = DateTime.Now.ToString();
             All = new List<QuestsEntry> { new QuestsEntry(1), new QuestsEntry(2) };
         }
     }
