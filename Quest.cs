@@ -26,6 +26,7 @@ namespace Quest
         private Config config;
         private RankConfig rankconfig;
         private DateTime LastCheck2;
+        private string rootbuffpermission = "questbuff";
         public override Version Version
         {
             get { return new Version("1.0.0.0"); }
@@ -683,11 +684,11 @@ namespace Quest
 
             var UsernameBankAccount = SEconomyPlugin.Instance.GetBankAccount(args.Player.Name);
             var playeramount = UsernameBankAccount.Balance;
-            Money amount = thingneedtotake.Reward;
+            int level_bonus_percent = args.Player.Group.GetDynamicPermission(rootbuffpermission);
+            Money amount = thingneedtotake.Reward * (1 + level_bonus_percent / 100);
             Money amount2 = -thingneedtotake.Reward;
             var amount3 = Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(-amount2));
             var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver;
-
             if (args.Player == null || UsernameBankAccount == null)
             {
                 args.Player.SendMessage("Can't find the account for " + args.Player.Name + ".", Color.LightBlue);
@@ -762,6 +763,10 @@ namespace Quest
                 SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UsernameBankAccount, paid,
                                                                Journalpayment, string.Format("Completed quest ID {0} for {1}", id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid))),
                                                                string.Format("Quest Completed: " + thingneedtotake.DisplayName));
+                if (level_bonus_percent != 0)
+                {
+                    args.Player.SendMessage("[Quest System] A rank bonus of "+ level_bonus_percent + "% will be added to your reward.", Color.LightBlue);
+                }
                 args.Player.SendMessage("[Quest System] You have completed Quest " + thingneedtotake.DisplayName + " for " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)) + "!", Color.LightBlue);
                 TShock.Log.ConsoleInfo("[Quest System] {0} has completed Quest {1} for {2}.", args.Player.Name, thingneedtotake.DisplayName, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
                 var num = QuestDB.Query("INSERT INTO QuestHistory (Time, Account, QuestName, WorldID, Reward) VALUES (@0, @1, @2, @3, @4);", DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss"), args.Player.Name, thingneedtotake.DisplayName, Main.worldID, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
