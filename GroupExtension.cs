@@ -16,7 +16,7 @@ namespace Quest
         /// <returns></returns>
         public static int GetDynamicPermission(this Group group, string root)
         {
-            short maxbuff = 100;
+            short maxbuff = short.MaxValue;
             if (group.HasPermission(root + ".*") || group.HasPermission("*"))
                 return maxbuff;
 
