@@ -14,9 +14,9 @@ namespace Quest
         /// <param name="group">A TShock group.</param>
         /// <param name="root">Root of permission (part before number)</param>
         /// <returns></returns>
-        public static int GetDynamicPermission(this Group group, string root)
+        public static double GetDynamicPermission(this Group group, string root)
         {
-            short maxbuff = short.MaxValue;
+            double maxbuff = short.MaxValue;
             if (group.HasPermission(root + ".*") || group.HasPermission("*"))
                 return maxbuff;
 

@@ -64,7 +64,7 @@ namespace Quest
             }
             else
             { LastCheck2 = DateTime.Parse(config.lastcheck); }
-            
+
             switch (TShock.Config.StorageType.ToLower())
             {
                 case "mysql":
@@ -544,6 +544,7 @@ namespace Quest
         }
         private void Quest_return(CommandArgs args)
         {
+            //args.Player.SendMessage(args.Player.Group.GetDynamicPermission(rootbuffpermission).ToString(), Color.LightBlue);
             if ((args.Parameters.Count < 1))
             {
                 args.Player.SendMessage("Redeem a Quest: /quest <quest ID>", Color.LightBlue);
@@ -600,7 +601,7 @@ namespace Quest
                             {
                                 left = Convert.ToString(item_in_config.maxredeem - totalcount);
                             }
-                            string newline = "* ID: " + reader.Get<int>("ID").ToString().Colorize(Color.LightBlue) + " - ".Colorize(Color.LightBlue) + left.Colorize(Color.LightBlue) + " redeem(s) left "+ "- ".Colorize(Color.LightBlue) + Math.Ceiling(timeleft).ToString().Colorize(Color.LightBlue) + " day(s) left " + "-".Colorize(Color.LightBlue) + " Reward: " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(Math.Ceiling(reward))).ToString().Colorize(Color.LightBlue) + " - ".Colorize(Color.LightBlue);
+                            string newline = "* ID: " + reader.Get<int>("ID").ToString().Colorize(Color.LightBlue) + " - ".Colorize(Color.LightBlue) + left.Colorize(Color.LightBlue) + " redeem(s) left " + "- ".Colorize(Color.LightBlue) + Math.Ceiling(timeleft).ToString().Colorize(Color.LightBlue) + " day(s) left " + "-".Colorize(Color.LightBlue) + " Reward: " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(Math.Ceiling(reward))).ToString().Colorize(Color.LightBlue) + " - ".Colorize(Color.LightBlue);
                             foreach (var item in item_in_config.IncludeItems)
                             {
                                 newline = newline + ItemToTag(item);
@@ -626,7 +627,7 @@ namespace Quest
             int testint = 0;
             if ((args.Parameters[0] != "l") && (args.Parameters[0] != "list") && (!int.TryParse(args.Parameters[0], out testint)))
             {
-                args.Player.SendMessage("Incorrect Syntax. Try again", Color.LightBlue);
+                args.Player.SendMessage("[Quest System] Incorrect Syntax. Try again", Color.LightCoral);
                 return;
             }
             int id = Convert.ToInt32(args.Parameters[0]);
@@ -647,12 +648,12 @@ namespace Quest
             }
             if ((!found))
             {
-                args.Player.SendMessage("Incorrect ID. Try again", Color.LightBlue);
+                args.Player.SendMessage("[Quest System] Incorrect ID. Try again", Color.LightCoral);
                 return;
             }
             if (!GetEnabledStatus(questname))
             {
-                args.Player.SendMessage("This quest is not available today. Please come back later.", Color.LightBlue);
+                args.Player.SendMessage("[Quest System] This quest is not available today. Please come back later.", Color.LightCoral);
                 return;
             }
             int time_completed = CheckCompletion(args.Player.User.ID, questname);
@@ -666,32 +667,33 @@ namespace Quest
             }
             if (!args.Player.Group.HasPermission(thingneedtotake.RequirePermission))
             {
-                args.Player.SendMessage("You are not allow to do this Quest.", Color.LightBlue);
+                args.Player.SendMessage("[Quest System] You are not allow to do this Quest.", Color.LightCoral);
                 return;
             }
             if ((thingneedtotake.maxredeem != -1) && (time_completed >= thingneedtotake.maxredeem))
             {
-                args.Player.SendMessage("Maximum number of completion reached. You cannot do this quest anymore.", Color.LightBlue);
+                args.Player.SendMessage("[Quest System] Maximum number of completion reached. You cannot do this quest anymore.", Color.LightCoral);
                 return;
             }
             if ((!checkregion(args.Player, config.questregion)))
             {
-                args.Player.SendMessage("You are not in the Quest region.", Color.LightBlue);
+                args.Player.SendMessage("[Quest System] You are not in the Quest region.", Color.LightCoral);
                 return;
             }
 
 
 
             var UsernameBankAccount = SEconomyPlugin.Instance.GetBankAccount(args.Player.Name);
-            var playeramount = UsernameBankAccount.Balance;
-            int level_bonus_percent = args.Player.Group.GetDynamicPermission(rootbuffpermission);
-            Money amount = thingneedtotake.Reward * (1 + level_bonus_percent / 100);
-            Money amount2 = -thingneedtotake.Reward;
-            var amount3 = Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(-amount2));
+            //var playeramount = UsernameBankAccount.Balance;
+            double level_bonus_percent = args.Player.Group.GetDynamicPermission(rootbuffpermission);
+            Money amount = thingneedtotake.Reward;
+            //Money amount2 = -thingneedtotake.Reward * (1 + level_bonus_percent / 100);
+            //var amount3 = Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(-amount2));
             var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver;
+
             if (args.Player == null || UsernameBankAccount == null)
             {
-                args.Player.SendMessage("Can't find the account for " + args.Player.Name + ".", Color.LightBlue);
+                args.Player.SendMessage("[Quest System] Can't find the account for " + args.Player.Name + ".", Color.LightCoral);
                 return;
             }
             bool exist = false;
@@ -719,7 +721,7 @@ namespace Quest
                 }
                 if (!exist2)
                 {
-                    args.Player.SendMessage("You don't have the required item " + ItemToTag(item_in_config) + " in your inventory!", Color.LightCyan);
+                    args.Player.SendMessage("[Quest System] You don't have the required item " + ItemToTag(item_in_config) + " in your inventory!", Color.LightCoral);
                     return;
                 }
             }
@@ -754,20 +756,21 @@ namespace Quest
                     if (!collection_success)
                     {
                         Item take = TShock.Utils.GetItemById(item_in_config.netID);
-                        args.Player.SendMessage("Don't take the item " + ItemToTag(item_in_config) + " out of your inventory! Transaction Cancelled.", Color.LightCyan);
+                        args.Player.SendMessage("[Quest System] Don't take the item " + ItemToTag(item_in_config) + " out of your inventory! Transaction Cancelled.", Color.LightCoral);
                         return;
                     }
                 }
-                double payment = amount * config.questmultiplier;
+                double payment = amount * config.questmultiplier * (1 + level_bonus_percent/100);
+                //args.Player.SendInfoMessage(payment.ToString());
                 int paid = Convert.ToInt32(Math.Ceiling(payment));
                 SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UsernameBankAccount, paid,
                                                                Journalpayment, string.Format("Completed quest ID {0} for {1}", id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid))),
                                                                string.Format("Quest Completed: " + thingneedtotake.DisplayName));
                 if (level_bonus_percent != 0)
                 {
-                    args.Player.SendMessage("[Quest System] A rank bonus of "+ level_bonus_percent + "% will be added to your reward.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] A rank bonus of " + level_bonus_percent + "% will be added to your reward.", Color.LightBlue);
                 }
-                args.Player.SendMessage("[Quest System] You have completed Quest " + thingneedtotake.DisplayName + " for " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)) + "!", Color.LightBlue);
+                args.Player.SendMessage("[Quest System] You have completed Quest " + thingneedtotake.DisplayName.Colorize(Color.Yellow) + " for " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)).ToString().Colorize(Color.Yellow) + "!", Color.LightBlue);
                 TShock.Log.ConsoleInfo("[Quest System] {0} has completed Quest {1} for {2}.", args.Player.Name, thingneedtotake.DisplayName, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
                 var num = QuestDB.Query("INSERT INTO QuestHistory (Time, Account, QuestName, WorldID, Reward) VALUES (@0, @1, @2, @3, @4);", DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss"), args.Player.Name, thingneedtotake.DisplayName, Main.worldID, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
                 string newaccountlist = accountlist_buy + args.Player.User.ID + ",";
@@ -827,12 +830,12 @@ namespace Quest
                 }
                 if (!questavail)
                 {
-                    args.Player.SendMessage("There are no quest available for this rank. You can level up directly using: /rank up.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] There are no quest available for this rank. You can level up directly using: /rank up.", Color.LightBlue);
                     return;
                 }
                 if (questtodo.hardmode && !Main.hardMode)
                 {
-                    args.Player.SendMessage("This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightCoral);
                     return;
                 }
                 bool confirm_success = false;
@@ -859,7 +862,7 @@ namespace Quest
                     }
                     if (!exist2)
                     {
-                        args.Player.SendMessage("We cannot find this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + ". There maybe more item(s) missing, please check the quest's requirement again.", Color.LightBlue);
+                        args.Player.SendMessage("[Quest System] We cannot find this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + ". There maybe more item(s) missing, please check the quest's requirement again.", Color.LightCoral);
                         confirm_success = false;
                         return;
                     }
@@ -872,12 +875,12 @@ namespace Quest
                 var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver;
                 if (args.Player == null || UsernameBankAccount == null)
                 {
-                    args.Player.SendMessage("Can't find the account for " + args.Player.Name + ".", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] Can't find the account for " + args.Player.Name + ".", Color.LightCoral);
                     return;
                 }
                 if (playeramount < amount2 * rankconfig.questmultiplier)
                 {
-                    args.Player.SendMessage("You need at least " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(rankconfig.questmultiplier * questtodo.price)) + " to become a [" + questtodo.finalrank + "]. But you only have " + UsernameBankAccount.Balance + " in your account.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] You need at least " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(rankconfig.questmultiplier * questtodo.price)).ToString().Colorize(Color.Yellow) + " to become a [" + questtodo.finalrank.Colorize(Color.Yellow) + "]. But you only have " + UsernameBankAccount.Balance.ToString().Colorize(Color.Yellow) + " in your account.", Color.LightBlue);
                     return;
                 }
 
@@ -909,7 +912,7 @@ namespace Quest
                         }
                         if (!exist2)
                         {
-                            args.Player.SendMessage("Do not take this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + " out of your inventory!", Color.LightBlue);
+                            args.Player.SendMessage("[Quest System] Do not take this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + " out of your inventory!", Color.LightCoral);
                             confirm_success = false;
                             return;
                         }
@@ -925,14 +928,14 @@ namespace Quest
                     TShock.Users.SetUserGroup(args.Player.User, questtodo.finalrank);
                     TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/er \"" + args.Player.Name + "\"" + "-h +" + questtodo.hpup);
                     TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/er \"" + args.Player.Name + "\"" + "-m +" + questtodo.manaup);
-                    args.Player.SendMessage("Your HP has increase by " + questtodo.hpup + ".", Color.DeepSkyBlue);
-                    args.Player.SendMessage("Your Mana has increase by " + questtodo.manaup + ".", Color.DeepSkyBlue);
+                    args.Player.SendMessage("[Quest System] Your HP has increase by " + questtodo.hpup + ".", Color.DeepSkyBlue);
+                    args.Player.SendMessage("[Quest System] Your Mana has increase by " + questtodo.manaup + ".", Color.DeepSkyBlue);
                     if (questtodo.buffname != null)
                     {
                         TShockAPI.Commands.HandleCommand(TSPlayer.Server, ".gpermabuff \"" + questtodo.buffname + "\"" + " \"" + args.Player.Name + "\"");
-                        args.Player.SendMessage("You has been granted " + questtodo.buffname + " buff permanently.", Color.DeepSkyBlue);
+                        args.Player.SendMessage("[Quest System] You has been granted " + questtodo.buffname + " buff permanently.", Color.DeepSkyBlue);
                     }
-                    args.Player.SendMessage("Congratulation, You have completed the Faction's quest and become a " + questtodo.finalrank + "!", Color.DeepSkyBlue);
+                    args.Player.SendMessage("[Quest System] Congratulation, You have completed the Faction's quest and become a " + questtodo.finalrank + "!", Color.DeepSkyBlue);
                     TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/firework \"" + args.Player.Name + "\"");
                     TShock.Utils.Broadcast(args.Player.Name + " has become a " + questtodo.finalrank, Color.DeepSkyBlue);
                     args.Player.SendMessage("", Color.DeepSkyBlue);
@@ -964,7 +967,7 @@ namespace Quest
                 }
                 if (hardmoderequire && !Main.hardMode)
                 {
-                    args.Player.SendMessage("This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightCoral);
                     return;
                 }
                 if (quest_available)
@@ -989,12 +992,12 @@ namespace Quest
                 }
                 if (questtodo.hardmode && !Main.hardMode)
                 {
-                    args.Player.SendMessage("[Rank System] This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] This rank is not available pre-hardmode. Try again after Hardmode.", Color.LightCoral);
                     return;
                 }
                 if (!questavail)
                 {
-                    args.Player.SendMessage("There are no quest available for this rank. You can level up directly using: /rank up.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] There are no quest available for this rank. You can level up directly using: /rank up.", Color.LightCoral);
                     return;
                 }
                 bool confirm_success = false;
@@ -1021,7 +1024,7 @@ namespace Quest
                     }
                     if (!exist2)
                     {
-                        args.Player.SendMessage("We cannot find this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + ". There maybe more item(s) missing, please check the quest's requirement again.", Color.LightBlue);
+                        args.Player.SendMessage("[Quest System] We cannot find this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + ". There maybe more item(s) missing, please check the quest's requirement again.", Color.LightCoral);
                         confirm_success = false;
                         return;
                     }
@@ -1034,12 +1037,12 @@ namespace Quest
                 var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver;
                 if (args.Player == null || UsernameBankAccount == null)
                 {
-                    args.Player.SendMessage("Can't find the account for " + args.Player.Name + ".", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] Can't find the account for " + args.Player.Name + ".", Color.LightCoral);
                     return;
                 }
                 if (playeramount < amount2 * rankconfig.questmultiplier)
                 {
-                    args.Player.SendMessage("You need at least " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(rankconfig.questmultiplier * questtodo.price)) + " to become a [" + questtodo.finalrank + "]. But you only have " + UsernameBankAccount.Balance + " in your account.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] You need at least " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(rankconfig.questmultiplier * questtodo.price)).ToString().Colorize(Color.Yellow) + " to become a [" + questtodo.finalrank.Colorize(Color.Yellow) + "]. But you only have " + UsernameBankAccount.Balance.ToString().Colorize(Color.Yellow) + " in your account.", Color.LightCoral);
                     return;
                 }
 
@@ -1071,7 +1074,7 @@ namespace Quest
                         }
                         if (!exist2)
                         {
-                            args.Player.SendMessage("Do not take this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + " out of your inventory!", Color.LightBlue);
+                            args.Player.SendMessage("[Quest System] Do not take this item: " + itemtotag(iteminlist.stack, iteminlist.netID, iteminlist.prefix) + " out of your inventory!", Color.LightCoral);
                             confirm_success = false;
                             return;
                         }
@@ -1087,14 +1090,14 @@ namespace Quest
                     TShock.Users.SetUserGroup(args.Player.User, questtodo.finalrank);
                     TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/er \"" + args.Player.Name + "\"" + "-h +" + questtodo.hpup);
                     TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/er \"" + args.Player.Name + "\"" + "-m +" + questtodo.manaup);
-                    args.Player.SendMessage("Your HP has increase by " + questtodo.hpup + ".", Color.DeepSkyBlue);
-                    args.Player.SendMessage("Your Mana has increase by " + questtodo.manaup + ".", Color.DeepSkyBlue);
+                    args.Player.SendMessage("[Quest System] Your HP has increase by " + questtodo.hpup + ".", Color.DeepSkyBlue);
+                    args.Player.SendMessage("[Quest System] Your Mana has increase by " + questtodo.manaup + ".", Color.DeepSkyBlue);
                     if (questtodo.buffname != null)
                     {
                         TShockAPI.Commands.HandleCommand(TSPlayer.Server, ".gpermabuff \"" + questtodo.buffname + "\"" + " \"" + args.Player.Name + "\"");
-                        args.Player.SendMessage("You has been granted " + questtodo.buffname + " buff permanently.", Color.DeepSkyBlue);
+                        args.Player.SendMessage("[Quest System] You has been granted " + questtodo.buffname + " buff permanently.", Color.DeepSkyBlue);
                     }
-                    args.Player.SendMessage("Congratulation, You have completed the Faction's quest and become a " + questtodo.finalrank + "!", Color.DeepSkyBlue);
+                    args.Player.SendMessage("[Quest System] Congratulation, You have completed the Faction's quest and become a " + questtodo.finalrank + "!", Color.DeepSkyBlue);
                     TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/firework \"" + args.Player.Name + "\"");
                     TShock.Utils.Broadcast(args.Player.Name + " has become a " + questtodo.finalrank, Color.DeepSkyBlue);
                     args.Player.SendMessage("", Color.DeepSkyBlue);
@@ -1262,7 +1265,7 @@ namespace Quest
         public int max_avail_quest;
         public int minrefreshsecond;
         public string lastcheck;
-        public void lastcheckwrite(DateTime alltimelastcheck )
+        public void lastcheckwrite(DateTime alltimelastcheck)
         {
             lastcheck = alltimelastcheck.ToString();
             return;
