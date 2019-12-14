@@ -768,7 +768,7 @@ namespace Quest
                                                                string.Format("Quest Completed: " + thingneedtotake.DisplayName));
                 if (level_bonus_percent != 0)
                 {
-                    args.Player.SendMessage("[Quest System] A rank bonus of " + level_bonus_percent + "% will be added to your reward.", Color.LightBlue);
+                    args.Player.SendMessage("[Quest System] A rank bonus of " + level_bonus_percent.ToString().Colorize(Color.Yellow) + "%".Colorize(Color.Yellow) + " will be added to your reward.", Color.LightBlue);
                 }
                 args.Player.SendMessage("[Quest System] You have completed Quest " + thingneedtotake.DisplayName.Colorize(Color.Yellow) + " for " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)).ToString().Colorize(Color.Yellow) + "!", Color.LightBlue);
                 TShock.Log.ConsoleInfo("[Quest System] {0} has completed Quest {1} for {2}.", args.Player.Name, thingneedtotake.DisplayName, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
