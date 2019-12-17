@@ -76,6 +76,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="JobConfigHandler.cs" />
+    <Compile Include="JobQuestClass.cs" />
+    <Compile Include="QuestConfigHandler.cs" />
+    <Compile Include="RankConfighandler.cs" />
+    <Compile Include="RankQuestClass.cs" />
+    <Compile Include="QuestClass.cs" />
     <Compile Include="GroupExtension.cs" />
     <Compile Include="ColorExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

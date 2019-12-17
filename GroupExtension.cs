@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using Group = TShockAPI.Group;
 
-namespace Quest
+namespace QuestSystem
 {
     // From EssentialsPlus
 
