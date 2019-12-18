@@ -78,7 +78,7 @@ namespace QuestSystem
         private void ReloadConfig(ReloadEventArgs args)
         {
 
-            if (ReadConfig() && ReadRankConfig())
+            if (ReadConfig() && ReadRankConfig() && ReadJobConfig())
             {
                 UpdateDB();
                 args.Player.SendSuccessMessage("[Quest System] Reload success.");

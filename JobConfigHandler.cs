@@ -22,8 +22,8 @@ namespace QuestSystem
                 {
                     using (var sr = new StreamWriter(stream))
                     {
-                        rankconfig = new RankConfig(1);
-                        var configString = JsonConvert.SerializeObject(rankconfig, Formatting.Indented);
+                        jobconfig = new JobConfig(1);
+                        var configString = JsonConvert.SerializeObject(jobconfig, Formatting.Indented);
                         sr.Write(configString);
                     }
                     stream.Close();
@@ -46,7 +46,7 @@ namespace QuestSystem
                         using (var sr = new StreamReader(stream))
                         {
                             var configString = sr.ReadToEnd();
-                            rankconfig = JsonConvert.DeserializeObject<RankConfig>(configString);
+                            jobconfig = JsonConvert.DeserializeObject<JobConfig>(configString);
                             foreach (var element in rankconfig.All)
                             {
                                 foreach (var element2 in element.IncludeItems)
