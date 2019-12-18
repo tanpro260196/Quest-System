@@ -54,6 +54,7 @@ namespace QuestSystem
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", Quest_return, "quest", "q"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", rankquest, "rank"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.use", questsearch, "questsearch", "qs"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("quest.job", JobQuest, "jobquest", "jq"));
             TShockAPI.Commands.ChatCommands.Add(new Command("quest.admin", ForceUpdate, "forcequestupdate", "fqu"));
             GeneralHooks.ReloadEvent += ReloadConfig;
             ReadConfig();
@@ -99,6 +100,13 @@ namespace QuestSystem
                new SqlColumn("Time", MySqlDbType.String, 200),
                new SqlColumn("Account", MySqlDbType.VarChar) { Length = 50 },
                new SqlColumn("QuestName", MySqlDbType.String, 100),
+               new SqlColumn("WorldID", MySqlDbType.Int32),
+               new SqlColumn("Reward", MySqlDbType.String, 100)));
+
+            sqlcreator.EnsureTableStructure(new SqlTable("JobQuestHistory",
+               new SqlColumn("Time", MySqlDbType.String, 200),
+               new SqlColumn("Account", MySqlDbType.VarChar) { Length = 50 },
+               new SqlColumn("ID", MySqlDbType.Int32),
                new SqlColumn("WorldID", MySqlDbType.Int32),
                new SqlColumn("Reward", MySqlDbType.String, 100)));
 
@@ -982,7 +990,7 @@ namespace QuestSystem
                     {
                         newline = newline + ItemToTag(item);
                     }
-                    if (args.Player.HasPermission(jobconfig.All[i].RequirePermission))
+                    if ((args.Player.HasPermission(jobconfig.All[i].RequirePermission)) && (!jobconfig.All[i].hardmode || (jobconfig.All[i].hardmode && Main.hardMode)))
                     {
                         lines.Add(newline);
                     }
@@ -1017,6 +1025,11 @@ namespace QuestSystem
                 return;
             }
             
+            if (jobconfig.All[id].hardmode && !Main.hardMode)
+            {
+                args.Player.SendMessage("[Quest System] This Quest require Hardmode World. Please try again after WoF.", Color.LightCoral);
+                return;
+            }
 
             var UsernameBankAccount = SEconomyPlugin.Instance.GetBankAccount(args.Player.Name);
             //var playeramount = UsernameBankAccount.Balance;
@@ -1095,12 +1108,13 @@ namespace QuestSystem
                         return;
                     }
                 }
-                double payment = amount * config.questmultiplier;
+                double payment = amount * jobconfig.questmultiplier;
                 //args.Player.SendInfoMessage(payment.ToString());
                 int paid = Convert.ToInt32(Math.Ceiling(payment));
                 SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UsernameBankAccount, paid,
                                                                Journalpayment, string.Format("Completed Job Quest ID {0} for {1}", id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid))),
                                                                string.Format("Quest Completed: " + jobconfig.All[id].DisplayName));
+                QuestDB.Query("INSERT INTO JobQuestHistory (Time, Account, ID, WorldID, Reward) VALUES (@0, @1, @2, @3, @4);", DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss"), args.Player.Name, id, Main.worldID, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
                 args.Player.SendMessage("[Quest System] You have completed Job Quest " + id.ToString().Colorize(Color.Yellow) + " for " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)).ToString().Colorize(Color.Yellow) + "!", Color.LightBlue);
                 TShock.Log.ConsoleInfo("[Quest System] {0} has completed Job Quest {1} for {2}.", args.Player.Name, id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
             }
