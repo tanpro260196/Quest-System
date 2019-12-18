@@ -8,7 +8,7 @@ namespace QuestSystem
 {
     public class JobConfig
     {
-        public List<QuestsEntry> All;
+        public List<JobQuestsEntry> All;
         public bool HideUnavailableQuests;
         public double questmultiplier;
         //public List<string> class_list;
@@ -19,13 +19,13 @@ namespace QuestSystem
             HideUnavailableQuests = true;
             questmultiplier = 1.0;
             //class_list = new List<string> { "Mage", "Warrior", "Ranger", "Rogue" };
-            All = new List<QuestsEntry> { new QuestsEntry(1), new QuestsEntry(2) };
+            All = new List<JobQuestsEntry> { new JobQuestsEntry(1), new JobQuestsEntry(2) };
         }
     }
     public class JobQuestsEntry
     {
         public string DisplayName = "";
-        public string RequireGroup = null;
+        public string RequirePermission = "jobquest.admin";
         public int Reward = 0;
         public bool hardmode = false;
         public List<JobSimpleItem> IncludeItems = new List<JobSimpleItem> { };
@@ -38,9 +38,9 @@ namespace QuestSystem
                 var i2 = new JobSimpleItem(2761);
                 var i3 = new JobSimpleItem(2762);
                 DisplayName = "ExampleNebula";
-                RequireGroup = "Mage Level 5";
+                RequirePermission = "jobquest.mage";
                 Reward = 500000;
-                hardmode = true;
+                hardmode = false;
                 IncludeItems = new List<JobSimpleItem> { i1, i2, i3 };
             }
             if (a == 2)
@@ -48,6 +48,7 @@ namespace QuestSystem
                 DisplayName = "Example2";
                 Reward = 20;
                 hardmode = false;
+                RequirePermission = "jobquest.warrior";
                 for (int i = 0; i < 10; i++)
                 {
                     IncludeItems.Add(new JobSimpleItem(i + 2702));
@@ -57,6 +58,7 @@ namespace QuestSystem
             {
                 var i1 = new JobSimpleItem(2760);
                 DisplayName = "Example3";
+                RequirePermission = "jobquest.ranger";
                 Reward = 500000;
                 hardmode = false;
                 IncludeItems = new List<JobSimpleItem> { i1 };

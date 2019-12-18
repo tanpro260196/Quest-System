@@ -25,6 +25,7 @@ namespace QuestSystem
         public static IDbConnection QuestDB;
         private Config config;
         private RankConfig rankconfig;
+        private JobConfig jobconfig;
         private DateTime LastCheck2;
         private string rootbuffpermission = "questbuff";
         public override Version Version
@@ -57,6 +58,7 @@ namespace QuestSystem
             GeneralHooks.ReloadEvent += ReloadConfig;
             ReadConfig();
             ReadRankConfig();
+            ReadJobConfig();
             if (config.lastcheck == null)
             {
                 LastCheck2 = DateTime.Now;
@@ -301,155 +303,6 @@ namespace QuestSystem
             updatelastrefresh();
             TShock.Utils.Broadcast("[Quest System] Available Quest List Has Changed. Please check which Quest is available today using: /quest list.", Color.LightBlue);
             TShock.Utils.Broadcast("[Quest System] Total Number of Quests Available today is: " + Convert.ToString(i).Colorize(Color.Yellow) + ".", Color.LightBlue);
-        }
-        #endregion
-        #region misc
-        private static string ItemToTag(SimpleItem args)
-        {
-            string ret = ((args.prefix != 0) ? "[i/p" + args.prefix : "[i");
-            ret = (args.stack != 1) ? ret + "/s" + args.stack : ret;
-            ret = ret + ":" + args.netID + "]";
-            if (args.netID == 0) return "";
-            return ret;
-        }
-        private static string itemtotag(int stack, int id, int prefix)
-        {
-
-            string ret = ((prefix != 0) ? "[i/p" + prefix : "[i");
-            ret = (stack != 1) ? ret + "/s" + stack : ret;
-            ret = ret + ":" + id + "]";
-            if (id == 0) return "";
-            return ret;
-        }
-        private void UpdateDB()
-        {
-            foreach (var questitem in config.All)
-            {
-                bool exist = false;
-                using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-                {
-
-                    while (reader.Read())
-                    {
-                        if (questitem.DisplayName == reader.Get<string>("QuestName"))
-                        {
-
-                            exist = true;
-
-                        };
-                    }
-                }
-                if (exist == false)
-                {
-                    var add = QuestDB.Query("INSERT INTO QuestCount (QuestName, Status, LastRefresh) VALUES (@0, @1, @2);", questitem.DisplayName, "Disabled", DateTime.Now);
-                }
-            }
-        }
-        #endregion
-        #region checkDB
-        private string ReadDB(string QuestName)
-        {
-            string listaccounts = "";
-            using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-            {
-
-                while (reader.Read())
-                {
-                    if (QuestName == reader.Get<string>("QuestName"))
-                    {
-                        listaccounts = reader.Get<string>("Accounts");
-                    }
-                }
-            }
-            return listaccounts;
-        }
-        private bool GetEnabledStatus(string QuestName)
-        {
-            using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-            {
-                while (reader.Read())
-                {
-                    if (QuestName == reader.Get<string>("QuestName"))
-                    {
-                        if ((reader.Get<string>("Status") == "Enabled"))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        private int GetID(string QuestName)
-        {
-            int ID = -1;
-            using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-            {
-
-                while (reader.Read())
-                {
-                    if (QuestName == reader.Get<string>("QuestName"))
-                    {
-                        ID = reader.Get<int>("ID");
-                    }
-                }
-            }
-            return ID;
-        }
-        private string GetLastCheck(string QuestName)
-        {
-            string time = null;
-            using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-            {
-
-                while (reader.Read())
-                {
-                    if (QuestName == reader.Get<string>("QuestName"))
-                    {
-                        time = reader.Get<string>("LastRefresh");
-                    }
-                }
-            }
-            return time;
-        }
-        private int CheckCompletion(int userID, string QuestName)
-        {
-            int totalcount = 0;
-            using (var reader = QuestDB.QueryReader("SELECT * FROM QuestCount"))
-            {
-                while (reader.Read())
-                {
-                    if ((reader.Get<string>("QuestName") == QuestName))
-                    {
-                        string listaccount = (reader.Get<string>("Accounts"));
-                        if (listaccount != null)
-                        {
-                            totalcount = Regex.Matches(listaccount, Convert.ToString(userID)).Count;
-                        }
-                        return totalcount;
-                    }
-                }
-            }
-            return -1;
-        }
-        private bool checkregion(TSPlayer ply, string regionname)
-        {
-            if (regionname == null)
-            {
-                return true;
-            }
-            else if ((TShock.Regions.GetRegionByName(regionname) == null))
-            {
-                ply.SendMessage("Invalid region!", Color.LightBlue);
-                return false;
-            }
-            Region region = TShock.Regions.GetRegionByName(regionname);
-            if (region.InArea(ply.TileX, ply.TileY))
-            {
-                return true;
-            }
-            return false;
-
         }
         #endregion
         private void questsearch(CommandArgs args)
@@ -1104,6 +957,152 @@ namespace QuestSystem
                     return;
                 }
                 return;
+            }
+        }
+        private void JobQuest(CommandArgs args)
+        {
+            if ((args.Parameters.Count < 1))
+            {
+                args.Player.SendMessage("Redeem a Job Quest: /jobquest <quest ID>", Color.LightBlue);
+                args.Player.SendMessage("Job Quest List: /jobquest list or /jq l", Color.LightBlue);
+                //args.Player.SendMessage("Search for a Job Quest: /jobquest search <search term> or /jq s <search term>", Color.LightBlue);
+                return;
+            }
+            if ((args.Parameters[0] == "list") || (args.Parameters[0] == "l"))
+            {
+                int pageNumber = 1;
+                if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+                    return;
+                var lines = new List<string> { };
+                for (int i=0; i< jobconfig.All.Count(); i++)
+                {
+                    double reward = jobconfig.questmultiplier * jobconfig.All[i].Reward;
+                    string newline = "* ID: " + i.ToString().Colorize(Color.LightBlue) + " - ".Colorize(Color.LightBlue) + " Reward: " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(Math.Ceiling(reward))).ToString().Colorize(Color.LightBlue) + " - ".Colorize(Color.LightBlue);
+                    foreach (var item in jobconfig.All[i].IncludeItems)
+                    {
+                        newline = newline + ItemToTag(item);
+                    }
+                    if (args.Player.HasPermission(jobconfig.All[i].RequirePermission))
+                    {
+                        lines.Add(newline);
+                    }
+                }      
+                
+                PaginationTools.SendPage(args.Player, pageNumber, lines,
+                                         new PaginationTools.Settings
+                                         {
+                                             HeaderFormat = "Job Quest Menu ({0}/{1}):",
+                                             FooterFormat = "Type {0}jobquest l {{0}} for more options.".SFormat(Commands.Specifier),
+                                             MaxLinesPerPage = 9
+                                         }
+                                        );
+                return;
+            }
+            
+            if ((args.Parameters[0] != "l") && (args.Parameters[0] != "list") && (!int.TryParse(args.Parameters[0], out _)))
+            {
+                args.Player.SendMessage("[Quest System] Incorrect Syntax. Try again", Color.LightCoral);
+                return;
+            }
+            int id = Convert.ToInt32(args.Parameters[0]);
+
+            if ((jobconfig.All.Count() <= (id - 1)) || (id < 0))
+            {
+                args.Player.SendMessage("[Quest System] Incorrect ID. Try again", Color.LightCoral);
+                return;
+            }
+            if (!args.Player.HasPermission(jobconfig.All[id].RequirePermission))
+            {
+                args.Player.SendMessage("[Quest System] You do not met the Job/Level requirement for this Quest.", Color.LightCoral);
+                return;
+            }
+            
+
+            var UsernameBankAccount = SEconomyPlugin.Instance.GetBankAccount(args.Player.Name);
+            //var playeramount = UsernameBankAccount.Balance;
+            //double level_bonus_percent = args.Player.Group.GetDynamicPermission(rootbuffpermission);
+            Money amount = jobconfig.All[id].Reward;
+            //Money amount2 = -thingneedtotake.Reward * (1 + level_bonus_percent / 100);
+            //var amount3 = Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(-amount2));
+            var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver;
+
+            if (args.Player == null || UsernameBankAccount == null)
+            {
+                args.Player.SendMessage("[Quest System] Can't find the account for " + args.Player.Name + ".", Color.LightCoral);
+                return;
+            }
+            bool exist = false;
+            foreach (var item_in_config in jobconfig.All[id].IncludeItems)
+            {
+                bool exist2 = false;
+                var items_in_inventory = new Item();
+                int prefix_in_config = item_in_config.prefix;
+
+                for (int i = 0; i < 50; i++)
+                {
+                    items_in_inventory = args.Player.TPlayer.inventory[i];
+                    //If prefix = 0 in config, ignore prefix.
+                    if (item_in_config.prefix == 0)
+                    {
+                        prefix_in_config = items_in_inventory.prefix;
+                    }
+                    // Loops through the player's inventory
+                    if ((items_in_inventory.netID == item_in_config.netID) && (items_in_inventory.stack >= item_in_config.stack) && items_in_inventory.prefix == prefix_in_config)
+                    {
+                        exist = true;
+                        exist2 = true;
+                        break;
+                    }
+                }
+                if (!exist2)
+                {
+                    args.Player.SendMessage("[Quest System] You don't have the required item " + ItemToTag(item_in_config) + " in your inventory!", Color.LightCoral);
+                    return;
+                }
+            }
+
+
+
+            if (exist == true)
+            {
+                foreach (var item_in_config in jobconfig.All[id].IncludeItems)
+                {
+                    bool collection_success = false;
+                    var items_in_inventory = new Item();
+                    int prefix_in_config = item_in_config.prefix;
+                    for (int i = 0; i < 50; i++)
+                    {
+                        items_in_inventory = args.Player.TPlayer.inventory[i];
+                        //If prefix = 0 in config, ignore prefix.
+                        if (item_in_config.prefix == 0)
+                        {
+                            prefix_in_config = items_in_inventory.prefix;
+                        }
+                        // Loops through the player's inventory
+                        if ((items_in_inventory.netID == item_in_config.netID) && (items_in_inventory.stack >= item_in_config.stack) && items_in_inventory.prefix == prefix_in_config)
+                        {
+                            collection_success = true;
+                            args.Player.TPlayer.inventory[i].stack -= item_in_config.stack;
+                            NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, NetworkText.Empty, args.Player.Index, i);
+                            break;
+                        }
+                    }
+
+                    if (!collection_success)
+                    {
+                        Item take = TShock.Utils.GetItemById(item_in_config.netID);
+                        args.Player.SendMessage("[Quest System] Don't take the item " + ItemToTag(item_in_config) + " out of your inventory! Transaction Cancelled.", Color.LightCoral);
+                        return;
+                    }
+                }
+                double payment = amount * config.questmultiplier;
+                //args.Player.SendInfoMessage(payment.ToString());
+                int paid = Convert.ToInt32(Math.Ceiling(payment));
+                SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UsernameBankAccount, paid,
+                                                               Journalpayment, string.Format("Completed Job Quest ID {0} for {1}", id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid))),
+                                                               string.Format("Quest Completed: " + jobconfig.All[id].DisplayName));
+                args.Player.SendMessage("[Quest System] You have completed Job Quest " + id.ToString().Colorize(Color.Yellow) + " for " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)).ToString().Colorize(Color.Yellow) + "!", Color.LightBlue);
+                TShock.Log.ConsoleInfo("[Quest System] {0} has completed Job Quest {1} for {2}.", args.Player.Name, id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
             }
         }
     }
