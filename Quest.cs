@@ -1113,7 +1113,7 @@ namespace QuestSystem
                 int paid = Convert.ToInt32(Math.Ceiling(payment));
                 SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UsernameBankAccount, paid,
                                                                Journalpayment, string.Format("Completed Job Quest ID {0} for {1}", id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid))),
-                                                               string.Format("Quest Completed: " + jobconfig.All[id].DisplayName));
+                                                               string.Format("Quest" + id.ToString() + " Completed."));
                 QuestDB.Query("INSERT INTO JobQuestHistory (Time, Account, ID, WorldID, Reward) VALUES (@0, @1, @2, @3, @4);", DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss"), args.Player.Name, id, Main.worldID, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));
                 args.Player.SendMessage("[Quest System] You have completed Job Quest " + id.ToString().Colorize(Color.Yellow) + " for " + Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)).ToString().Colorize(Color.Yellow) + "!", Color.LightBlue);
                 TShock.Log.ConsoleInfo("[Quest System] {0} has completed Job Quest {1} for {2}.", args.Player.Name, id, Wolfje.Plugins.SEconomy.Money.Parse(Convert.ToString(paid)));

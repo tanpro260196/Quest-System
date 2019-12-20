@@ -24,7 +24,7 @@ namespace QuestSystem
     }
     public class JobQuestsEntry
     {
-        public string DisplayName = "";
+        //public string DisplayName = "";
         public string RequirePermission = "jobquest.admin";
         public int Reward = 0;
         public bool hardmode = false;
@@ -37,7 +37,7 @@ namespace QuestSystem
                 var i1 = new JobSimpleItem(2760);
                 var i2 = new JobSimpleItem(2761);
                 var i3 = new JobSimpleItem(2762);
-                DisplayName = "ExampleNebula";
+                //DisplayName = "ExampleNebula";
                 RequirePermission = "jobquest.mage";
                 Reward = 500000;
                 hardmode = false;
@@ -45,7 +45,7 @@ namespace QuestSystem
             }
             if (a == 2)
             {
-                DisplayName = "Example2";
+                //DisplayName = "Example2";
                 Reward = 20;
                 hardmode = false;
                 RequirePermission = "jobquest.warrior";
@@ -57,7 +57,7 @@ namespace QuestSystem
             if (a == 3)
             {
                 var i1 = new JobSimpleItem(2760);
-                DisplayName = "Example3";
+                //DisplayName = "Example3";
                 RequirePermission = "jobquest.ranger";
                 Reward = 500000;
                 hardmode = false;
